@@ -1,0 +1,14 @@
+@import './base.css';
+
+a {
+  text-decoration: none;
+  color: #0d6efd; /* Un azul de Bootstrap más estándar */
+  transition: color 0.3s;
+}
+
+@media (hover: hover) {
+  a:hover {
+    color: #0a58ca;
+  }
+}
+

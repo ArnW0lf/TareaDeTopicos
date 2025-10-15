@@ -1,0 +1,127 @@
+armar la imagen para poblar la base de datos
+docker compose up -d --build
+
+ejecutar el frontend
+npm run dev
+
+ingresar a http://localhost:5050/
+borrar inscripcion 
+-- Primero, borra el historial académico asociado a las inscripciones del estudiante
+DELETE FROM "HistorialesAcademicos"
+WHERE "DetalleInscripcionId" IN (
+    SELECT di."Id"
+    FROM "DetallesInscripciones" di
+    JOIN "Inscripciones" i ON di."InscripcionId" = i."Id"
+    JOIN "Estudiantes" e ON i."EstudianteId" = e."Id"
+    WHERE e."Registro" = '20251234'
+);
+
+-- Segundo, borra los detalles de las materias inscritas
+DELETE FROM "DetallesInscripciones"
+WHERE "InscripcionId" IN (
+    SELECT i."Id"
+    FROM "Inscripciones" i
+    JOIN "Estudiantes" e ON i."EstudianteId" = e."Id"
+    WHERE e."Registro" = '20251234'
+);
+
+-- Finalmente, borra las inscripciones principales del estudiante
+DELETE FROM "Inscripciones"
+WHERE "EstudianteId" = (
+    SELECT "Id" FROM "Estudiantes" WHERE "Registro" = '20251234'
+);
+
+Paso 1: Acceder a pgAdmin
+
+Abre tu navegador web y ve a la siguiente dirección:
+plaintext
+http://localhost:5050
+Te pedirá un usuario y contraseña. Usa los que están definidos en tu archivo docker-compose.yml:
+Email: admin@local.com
+Contraseña: admin123
+Paso 2: Crear la Conexión al Servidor de Base de Datos
+
+Una vez dentro de pgAdmin, vamos a decirle cómo encontrar tu base de datos.
+
+En el panel izquierdo, haz clic derecho sobre Servers y selecciona Register -> Server...
+
+Aparecerá una ventana. En la pestaña General, dale un nombre a la conexión. Puede ser cualquiera, por ejemplo: Mi Postgres Docker.
+
+Ahora, ve a la pestaña Connection. Aquí está la parte más importante. Rellena los campos exactamente así:
+
+Host name/address: postgres_db (¡Muy importante! Usa el nombre del servicio de Docker, no localhost).
+Port: 5432
+Maintenance database: universidad
+Username: postgres
+Password: 123456789 (La que está en tu docker-compose.yml).
+Marca la casilla Save password? para no tener que escribirla de nuevo.
+Haz clic en el botón Save.
+
+Paso 3: ¡Ver las Tablas y Ejecutar los Comandos!
+
+Si todo salió bien, ahora verás tu nuevo servidor en el panel izquierdo.
+
+Despliégalo: Mi Postgres Docker -> Databases -> universidad -> Schemas -> public -> Tables.
+¡Ahí estarán todas tus tablas! Inscripciones, DetallesInscripciones, Estudiantes, etc.
+Para ejecutar los comandos SQL que te di, haz clic derecho sobre la base de datos universidad y selecciona Query Tool.
+Se abrirá un editor de texto. Pega ahí los comandos DELETE y ejecútalos.
+
+
+-- Inserta un lote de nuevos horarios para pruebas más robustas
+INSERT INTO "Horarios" ("Dia", "HoraInicio", "HoraFin") VALUES
+('Lunes', '09:00:00', '11:00:00'),     -- ID 3: Choca con el horario original de Lunes.
+('Martes', '11:00:00', '13:00:00'),    -- ID 4: Choca con el horario original de Martes.
+('Miércoles', '08:00:00', '10:00:00'), -- ID 5: Un horario en un nuevo día, sin conflictos iniciales.
+('Jueves', '14:00:00', '16:00:00'),    -- ID 6: Un horario por la tarde.
+('Viernes', '08:00:00', '12:00:00');    -- ID 7: Un bloque más largo de 4 horas.
+
+
+-- Añadir más materias al Plan de Estudios con ID = 1 (SIS25)
+INSERT INTO "PlanMaterias" ("PlanId", "MateriaId", "Semestre") VALUES
+(1, 4, 1),   -- FIS100 en Semestre 1
+(1, 5, 1),   -- LIN100 en Semestre 1
+(1, 6, 2),   -- MAT102 en Semestre 2
+(1, 8, 2),   -- INF120 en Semestre 2
+(1, 11, 3),  -- MAT207 en Semestre 3
+(1, 12, 3);  -- INF210 en Semestre 3
+
+
+-- Crear grupos para las materias, algunos con horarios conflictivos y otros sin cupo.
+-- NOTA: Usamos PeriodoId = 1 para todos, que corresponde a la gestión '2025-1'.
+
+-- Materia: CALCULO I (MateriaId=1) -> Grupo SA, Lunes 08:00-10:00 (HorarioId=1)
+INSERT INTO "GruposMaterias" ("MateriaId", "Grupo", "DocenteId", "Cupo", "HorarioId", "AulaId", "Estado", "PeriodoId")
+VALUES (1, 'SA', 1, 20, 1, 1, 'ACTIVO', 1);
+
+-- Materia: FISICA I (MateriaId=4) -> Grupo SA, Lunes 09:00-11:00 (HorarioId=3)
+-- 🔥 ESTE GRUPO CHOCA CON EL DE CÁLCULO I
+INSERT INTO "GruposMaterias" ("MateriaId", "Grupo", "DocenteId", "Cupo", "HorarioId", "AulaId", "Estado", "PeriodoId")
+VALUES (4, 'SA', 10, 20, 3, 2, 'ACTIVO', 1);
+
+-- Materia: PROGRAMACION I (MateriaId=8) -> Grupo SC, Martes 10:00-12:00 (HorarioId=2)
+-- Este no tiene conflicto inicial.
+INSERT INTO "GruposMaterias" ("MateriaId", "Grupo", "DocenteId", "Cupo", "HorarioId", "AulaId", "Estado", "PeriodoId")
+VALUES (8, 'SC', 20, 15, 2, 3, 'ACTIVO', 1);
+
+-- Materia: PROGRAMACION I (MateriaId=8) -> Grupo SD, Miércoles 08:00-10:00 (HorarioId=5)
+-- Otro grupo para la misma materia, para poder elegir.
+INSERT INTO "GruposMaterias" ("MateriaId", "Grupo", "DocenteId", "Cupo", "HorarioId", "AulaId", "Estado", "PeriodoId")
+VALUES (8, 'SD', 21, 15, 5, 1, 'ACTIVO', 1);
+
+-- Materia: CALCULO II (MateriaId=6) -> Grupo Z1, Jueves 14:00-16:00 (HorarioId=6)
+-- 🔥 ESTE GRUPO NO TIENE CUPOS DISPONIBLES
+INSERT INTO "GruposMaterias" ("MateriaId", "Grupo", "DocenteId", "Cupo", "HorarioId", "AulaId", "Estado", "PeriodoId")
+VALUES (6, 'Z1', 30, 0, 6, 2, 'ACTIVO', 1);
+
+network_security_config.xml
+y en ApiClient: app\app\src\main\java\com\example\inscripcionapp
+// ⚠️ IMPORTANTE: CAMBIA ESTA IP
+// Usa la IP de tu computadora en la red local.
+// Para encontrarla, en Windows abre cmd y escribe: ipconfig
+// Busca la dirección IPv4 de tu adaptador Wi-Fi o Ethernet.
+// --------------------------------------------------------------------------------
+private const val BASE_URL = "http://192.168.1.10:5001/" // <-- CAMBIA ESTO
+
+ensamblar la app
+.\gradlew.bat assembleDebug
+app\build\outputs\apk\debug\app-debug.apk

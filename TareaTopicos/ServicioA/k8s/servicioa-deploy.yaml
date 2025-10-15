@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servicioa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servicioa
+  template:
+    metadata:
+      labels:
+        app: servicioa
+    spec:
+      containers:
+        - name: servicioa
+          image: 693488589721.dkr.ecr.us-east-2.amazonaws.com/servicioa:latest
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servicioa
+spec:
+  selector:
+    app: servicioa
+  ports:
+    - port: 5000
+      targetPort: 5000

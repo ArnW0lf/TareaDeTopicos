@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulador de Inscripciones</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f6f8;
+      padding: 2rem;
+      color: #222;
+    }
+    h1 {
+      color: #0078d7;
+      margin-bottom: 1rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin: 0.5rem 0 0.25rem;
+    }
+    input, button {
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #0078d7;
+      color: white;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border-bottom: 1px solid #ddd;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background: #0078d7;
+      color: white;
+    }
+    .estado {
+      font-weight: bold;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      color: #fff;
+    }
+    .PENDIENTE { background: #ffb100; }
+    .CONFIRMADA { background: #28a745; }
+    .RECHAZADA { background: #dc3545; }
+    .PARCIAL { background: #17a2b8; }
+  </style>
+</head>
+<body>
+  <h1>🎓 Simulador de Inscripción Universitaria</h1>
+
+  <div class="card">
+    <label for="registro">Registro del Estudiante:</label>
+    <input id="registro" placeholder="Ej: 20251234" />
+
+    <label for="materia">Código de Materia:</label>
+    <input id="materia" placeholder="Ej: INF119" />
+
+    <label for="grupo">Grupo:</label>
+    <input id="grupo" placeholder="Ej: A o B" />
+
+    <button onclick="inscribir()">📝 Enviar Inscripción</button>
+    <button onclick="verEstado()">🔍 Ver Estado Actual</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 Estado de Inscripciones</h2>
+    <table id="tabla">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Materia</th>
+          <th>Grupo</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:5001/api/inscripciones";
+
+    // async function inscribir() {
+    //   const registro = document.getElementById("registro").value.trim();
+    //   const materiaCodigo = document.getElementById("materia").value.trim().toUpperCase();
+    //   const grupo = document.getElementById("grupo").value.trim().toUpperCase();
+
+    //   if (!registro || !materiaCodigo || !grupo) {
+    //     alert("Por favor, llena todos los campos antes de inscribirte.");
+    //     return;
+    //   }
+
+    //   const payload = {
+    //     registro,
+    //     periodoId: 1,
+    //     materias: [{ materiaCodigo, grupo }]
+    //   };
+
+    //   try {
+    //     const res = await fetch(`${API_BASE}/async`, {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify(payload)
+    //     });
+
+    //     if (res.ok) {
+    //       alert("✅ Solicitud enviada correctamente (estado: PENDIENTE).");
+    //       await verEstado();
+    //     } else {
+    //       const err = await res.json();
+    //       alert(`❌ Error: ${err.mensaje ?? "No se pudo inscribir"}`);
+    //     }
+    //   } catch (e) {
+    //     alert("💥 Error de conexión con el servidor.");
+    //     console.error(e);
+    //   }
+    // }
+
+async function inscribir() {
+  const registro = document.getElementById("registro").value.trim();
+  const materiaCodigo = document.getElementById("materia").value.trim().toUpperCase();
+  const grupo = document.getElementById("grupo").value.trim().toUpperCase();
+
+  if (!registro || !materiaCodigo || !grupo) {
+    alert("Por favor, llena todos los campos antes de inscribirte.");
+    return;
+  }
+
+  const payload = {
+    registro,
+    periodoId: 1,
+    materias: [{ materiaCodigo, grupo }]
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/async`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const result = await res.json();
+
+      // 🟡 Mostrar directamente una fila "Pendiente" sin esperar al backend
+      const tbody = document.querySelector("#tabla tbody");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>-</td>
+        <td>${materiaCodigo}</td>
+        <td>${grupo}</td>
+        <td>${new Date().toLocaleString()}</td>
+        <td><span class="estado PENDIENTE">PENDIENTE</span></td>
+      `;
+      tbody.prepend(tr); // la pone al inicio
+
+      alert(result.mensaje ?? "✅ Solicitud enviada (en cola).");
+
+      // opcional: recargar estado real luego de unos segundos
+      setTimeout(verEstado, 2000);
+    } else {
+      const err = await res.json();
+      alert(`❌ Error: ${err.mensaje ?? "No se pudo inscribir"}`);
+    }
+  } catch (e) {
+    alert("💥 Error de conexión con el servidor.");
+    console.error(e);
+  }
+}
+
+
+
+
+
+
+
+
+
+    async function verEstado() {
+      const registro = document.getElementById("registro").value.trim();
+      if (!registro) {
+        alert("⚠️ Ingresa un registro primero.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/estado-inscripcion/${registro}`);
+        const data = await res.json();
+
+        const tbody = document.querySelector("#tabla tbody");
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(data)) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="5">${data.mensaje ?? "Sin datos"}</td>`;
+          tbody.appendChild(tr);
+          return;
+        }
+
+        data.forEach(i => {
+          i.materias.forEach(m => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${i.id}</td>
+              <td>${m.codigo}</td>
+              <td>${m.grupo}</td>
+              <td>${new Date(i.fecha).toLocaleString()}</td>
+              <td><span class="estado ${i.estado}">${i.estado}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error obteniendo estado.");
+      }
+    }
+  </script>
+</body>
+</html>

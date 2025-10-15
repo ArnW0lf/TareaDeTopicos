@@ -1,0 +1,25 @@
+[
+  {
+    "url": "http://localhost:5001/api/niveles/async",
+    "method": "POST",
+    "body": {
+      "numero": 9,
+      "nombre": "9no Semestre"
+    }
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/async/numero/9",
+    "method": "PUT",
+    "body": {
+      "nombre": "Noveno Semestre Actualizado"
+    }
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/async/numero/9",
+    "method": "DELETE"
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/estado/{idTransaccion}",
+    "method": "GET"
+  }
+]

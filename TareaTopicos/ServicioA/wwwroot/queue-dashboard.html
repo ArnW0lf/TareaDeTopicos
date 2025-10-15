@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <title>ServicioA – Monitor de Colas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #0b1020;
+            --card: #121831;
+            --muted: #8ea0c2;
+            --ok: #3ecf8e;
+            --warn: #f6c343;
+            --bad: #ff6b6b;
+            --acc: #6ea8fe;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            background: linear-gradient(180deg, #0b1020, #0a0e1a);
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 24px auto;
+            padding: 0 16px;
+            color: #e9efff;
+        }
+
+        .h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 8px 0 16px;
+            letter-spacing: .3px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 800px) {
+            .row {
+                grid-template-columns: 1.2fr .8fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+        }
+
+        .cfg {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .cfg input,
+        .cfg select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .1);
+            background: #0e1430;
+            color: #e9efff;
+        }
+
+        .cfg small {
+            color: var(--muted);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: #0e1430;
+            color: #e9efff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            border-color: rgba(255, 255, 255, .3);
+        }
+
+        .btn-ok {
+            border-color: rgba(62, 207, 142, .5);
+        }
+
+        .btn-warn {
+            border-color: rgba(246, 195, 67, .5);
+        }
+
+        .btn-bad {
+            border-color: rgba(255, 107, 107, .5);
+        }
+
+        .grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .grid th,
+        .grid td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            text-align: left;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .b-ok {
+            background: rgba(62, 207, 142, .15);
+            color: #a7f3d0;
+            border: 1px solid rgba(62, 207, 142, .4);
+        }
+
+        .b-bad {
+            background: rgba(255, 107, 107, .15);
+            color: #fecaca;
+            border: 1px solid rgba(255, 107, 107, .4);
+        }
+
+        .b-warn {
+            background: rgba(246, 195, 67, .15);
+            color: #fde68a;
+            border: 1px solid rgba(246, 195, 67, .4);
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .kpi {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .kpi .k {
+            background: #0e1430;
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        .k .t {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .k .v {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .err {
+            color: #ffb4b4;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <!-- ===================================================== -->
+        <!-- BLOQUE 1: Título principal ========================== -->
+        <!-- ===================================================== -->
+        <div class="h1">ServicioA · Monitor de Colas</div>
+
+        <!-- ===================================================== -->
+        <!-- BLOQUE 2: Configuración general ===================== -->
+        <!-- ===================================================== -->
+        <div class="card">
+            <div class="cfg">
+                <!-- URL base del backend -->
+                <div>
+                    <div class="muted">Base URL</div>
+                    <input id="baseUrl" value="http://localhost:5001" />
+                    <small>Ej: http://localhost:5001</small>
+                </div>
+
+                <!-- Nombre de la cola -->
+                <div>
+                    <div class="muted">Cola</div>
+                    <input id="queueName" value="default" />
+                    <small>Ej: default</small>
+                </div>
+
+                <!-- Intervalo de auto-refresh -->
+                <div>
+                    <div class="muted">Auto-Refresh</div>
+                    <select id="interval">
+                        <option value="0">Manual</option>
+                        <option value="1000">1s</option>
+                        <option value="2000" selected>2s</option>
+                        <option value="5000">5s</option>
+                        <option value="10000">10s</option>
+                    </select>
+                    <small>Cada cuánto actualizar</small>
+                </div>
+            </div>
+
+            <!-- Botones principales de acción -->
+            <div class="btns">
+                <button id="btnRefresh">Actualizar</button>
+                <button id="btnPause" class="btn-warn">Pausar</button>
+                <button id="btnResume" class="btn-ok">Reanudar</button>
+                <button id="btnReclaim" class="btn-warn">Reclamar In-Flight</button>
+                <button id="btnProcess1" class="btn-ok">Procesar 1</button>
+                <button id="btnReplay" class="btn-bad">DLQ Replay (máx):</button>
+
+                <!-- Exploración -->
+                <button id="btnPeek">Ver Cola</button>
+                <button id="btnInflight">Ver In-Flight</button>
+                <button id="btnDlqList">Ver DLQ</button>
+
+                <!-- Dump DLQ -->
+                <button id="btnDumpDlq">Dump DLQ (Redis)</button>
+
+                <!-- Cantidad para DLQ Replay -->
+                <input id="replayMax" type="number" value="50" min="1" style="width:90px; padding:8px 10px; border-radius:10px;
+                       border:1px solid rgba(255,255,255,.2); background:#0e1430;
+                       color:#e9efff;">
+            </div>
+
+            <!-- Estado y errores -->
+            <div id="status" class="muted" style="margin-top:8px;">…</div>
+            <div id="error" class="err"></div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- BLOQUE 3: Sección principal (tarjetas) ============== -->
+        <!-- ===================================================== -->
+        <div class="row" style="margin-top:12px;">
+
+            <!-- Estado de la cola -->
+            <div class="card">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="font-weight:700;">Estado de la cola</div>
+                    <div id="pausedBadge" class="badge b-ok">Activa</div>
+                </div>
+
+                <!-- KPIs -->
+                <div class="kpi">
+                    <div class="k">
+                        <div class="t">Pendientes (depth)</div>
+                        <div id="depthTotal" class="v">0</div>
+                    </div>
+                    <div class="k">
+                        <div class="t">En vuelo (inflight)</div>
+                        <div id="inflight" class="v">0</div>
+                    </div>
+                    <div class="k">
+                        <div class="t">DLQ</div>
+                        <div id="dlq" class="v">0</div>
+                    </div>
+                    <div class="k">
+                        <div class="t">DLQ (Redis)</div>
+                        <div id="dlqCountDisplay" class="v">0</div>
+                    </div>
+                </div>
+
+                <!-- Profundidad por prioridad -->
+                <table class="grid" id="depthTable">
+                    <thead>
+                        <tr>
+                            <th>Prioridad</th>
+                            <th>Pendientes</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card">
+                <div style="font-weight:700;">Acciones rápidas</div>
+                <ul class="muted" style="margin-top:8px; line-height:1.6;">
+                    <li><b>Pausar/Reanudar</b>: congela o habilita el consumo.</li>
+                    <li><b>Reclamar In-Flight</b>: devuelve a la cola mensajes atrapados por timeout.</li>
+                    <li><b>Procesar 1</b>: ejecuta solo un mensaje (debug).</li>
+                    <li><b>DLQ Replay</b>: reinyecta mensajes fallidos desde la cola muerta.</li>
+                </ul>
+                <div class="footer">
+                    Última actualización: <span id="lastUpdate">—</span>
+                </div>
+            </div>
+
+            <!-- Gestión de colas y workers -->
+            <div class="card" style="margin-top:12px;">
+                <div style="font-weight:700;">Gestión de Colas y Hilos</div>
+
+                <!-- Input global de workers -->
+                <div style="margin-top:8px;">
+                    <div class="muted">Workers por defecto</div>
+                    <input id="workers" type="number" value="1" min="0" style="width:90px; padding:8px 10px; border-radius:10px;
+                      border:1px solid rgba(255,255,255,.2); background:#0e1430;
+                      color:#e9efff;">
+                </div>
+
+                <!-- Input para crear nueva cola -->
+                <div style="margin-top:8px;">
+                    <div class="muted">Nueva Cola</div>
+                    <input id="newQueueName" placeholder="Ej: pedidos" style="width:200px; padding:6px 8px; border-radius:8px;
+                      border:1px solid rgba(255,255,255,.2); background:#0e1430;
+                      color:#e9efff;" />
+                </div>
+
+                <!-- Botones CRUD -->
+                <div class="btns" style="margin-top:8px;">
+                    <button id="btnListQueues" class="btn-ok">Listar Colas</button>
+                    <button id="btnAddQueue" class="btn-ok">Agregar Cola</button>
+                    <button id="btnScaleQueue" class="btn-warn">Escalar Cola</button>
+                    <button id="btnRemoveQueue" class="btn-bad">Eliminar Cola</button>
+                    <button id="btnBalance" class="btn-ok">Balancear</button>
+                </div>
+
+                <!-- Output JSON con estado de colas -->
+                <pre id="queuesOutput" style="margin-top:8px; background:#0e1430; padding:10px;
+           border-radius:8px; color:#e9efff; font-size:13px;
+           max-height:200px; overflow:auto;"></pre>
+
+                <!-- Migrar Workers -->
+                <div style="margin-top:8px;">
+                    <div class="muted">Migrar Workers</div>
+                    <input id="fromQueue" placeholder="Origen" style="width:100px;">
+                    <input id="toQueue" placeholder="Destino" style="width:100px;">
+                    <input id="migrateCount" type="number" value="1" min="1" style="width:80px;">
+                    <button id="btnMigrate" class="btn-warn">Migrar</button>
+                </div>
+
+                <!-- Tabla de monitoreo -->
+                <div class="card" style="margin-top:12px;">
+                    <div style="font-weight:700;">Monitoreo de todas las colas</div>
+                    <table class="grid" id="queuesTable" style="margin-top:8px; width:100%;">
+                        <thead>
+                            <tr>
+                                <th>Cola</th>
+                                <th>Workers</th>
+                                <th>Pendientes</th>
+                                <th>In-Flight</th>
+                                <th>DLQ</th>
+                                <th>Acciones</th> <!-- 👈 Nueva columna -->
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+<!-- Nueva sección: inspección directa de una cola -->
+<div class="card" style="margin-top:12px;">
+  <div style="font-weight:700;">Inspección de cola</div>
+  <div id="inspectInfo" class="muted">Selecciona una cola con "Ver"</div>
+  <table class="grid" id="inspectTable" style="margin-top:8px">
+      <thead>
+          <tr>
+              <th>#</th>
+              <th>Resumen</th>
+          </tr>
+      </thead>
+      <tbody></tbody>
+  </table>
+</div>
+
+
+            </div>
+
+
+            <!-- Exploración de mensajes -->
+            <div class="card" style="margin-top:12px;">
+                <div style="font-weight:700;">Exploración (contenido)</div>
+                <table class="grid" id="listTable" style="margin-top:8px">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Resumen</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="listInfo" class="muted" style="margin-top:6px;"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+
+        async function inspectQueue(name) {
+    try {
+        // 1. Stats rápidos
+        const stats = await api(`/admin/queues/${name}/stats`);
+        $('#inspectInfo').textContent = `Cola ${name} · Pendientes=${stats.depths?.reduce((a,b)=>a+b.depth,0) || 0}`;
+
+        // 2. Transacciones
+        const txs = await api(`/admin/queues/${name}/transactions?max=50`);
+        
+        // Pendientes de la cola
+const r = await api(`/admin/queues/${name}/peek?max=50`);
+let items = [];
+if (r.buckets) r.buckets.forEach(b => items = items.concat(b.items));
+else if (r.items) items = r.items;
+
+const tb = document.querySelector('#inspectTable tbody');
+tb.innerHTML = '';
+items.forEach((it, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${summarizeRaw(it.raw)}</td>`;
+    tb.appendChild(tr);
+});
+
+
+    } catch (e) {
+        $('#inspectInfo').textContent = `Error en cola ${name}: ${e.message}`;
+    }
+}
+
+
+        // =======================================================
+        // === BLOQUE 1: Helpers globales y variables ============
+        // =======================================================
+
+        // Atajo para selectores
+        const $ = s => document.querySelector(s);
+
+        // Devuelve la BaseURL de la API
+        const base = () => $('#baseUrl').value.replace(/\/+$/, '');
+
+        // Devuelve la cola seleccionada (o "default" si está vacío)
+        const q = () => encodeURIComponent($('#queueName').value.trim() || 'default');
+
+        // Temporizador de auto-refresh
+        let timer = null;
+
+
+        // =======================================================
+        // === BLOQUE 2: Cliente API genérico ====================
+        // =======================================================
+        async function api(path, opts = {}) {
+            const url = `${base()}${path}`;
+            const res = await fetch(url, {
+                ...opts,
+                headers: { 'accept': 'application/json', ...(opts.headers || {}) }
+            });
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+            const ct = res.headers.get('content-type') || '';
+            return ct.includes('application/json') ? res.json() : res.text();
+        }
+
+
+        // =======================================================
+        // === BLOQUE 3: Renderizado de estadísticas =============
+        // =======================================================
+        function setPausedBadge(paused) {
+            const el = $('#pausedBadge');
+            if (paused) { el.textContent = 'Pausada'; el.className = 'badge b-warn'; }
+            else { el.textContent = 'Activa'; el.className = 'badge b-ok'; }
+        }
+
+        function renderStats(s) {
+            // KPIs principales
+            const depthTotal = (s.depths || []).reduce((a, b) => a + (b.depth || 0), 0);
+            $('#depthTotal').textContent = depthTotal;
+            $('#inflight').textContent = s.inflight ?? 0;
+            $('#dlq').textContent = s.dlq ?? 0;
+            setPausedBadge(!!s.paused);
+
+            // Tabla de prioridades
+            const tb = $('#depthTable tbody');
+            tb.innerHTML = '';
+            (s.depths || []).forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>P${d.priority}</td><td>${d.depth}</td>`;
+                tb.appendChild(tr);
+            });
+
+            // Estado general
+            $('#status').textContent = `Cola: ${s.queue} · Prioridades: ${s.priorities}`;
+            $('#lastUpdate').textContent = new Date().toLocaleTimeString();
+            $('#error').textContent = '';
+        }
+
+        async function refresh() {
+            try {
+                const stats = await api(`/admin/queues/${q()}/stats`);
+                renderStats(stats);
+            } catch (e) {
+                $('#error').textContent = `Error al cargar stats: ${e.message}`;
+            }
+        }
+
+
+        // =======================================================
+        // === BLOQUE 4: Gestión de colas (CRUD colas) ===========
+        // =======================================================
+        $('#btnListQueues').onclick = async () => {
+            try {
+                const r = await api(`/admin/queues`);
+                $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+
+                // 👇 actualizar la tabla de monitoreo
+                await refreshAllQueues();
+            } catch (e) {
+                $('#error').textContent = e.message;
+            }
+        };
+
+
+        // $('#btnAddQueue').onclick = async () => {
+        //     try {
+        //         const w = parseInt($('#workers').value, 10);
+        //         const r = await api(`/admin/queues/${q()}?workers=${w}`, { method: 'POST' });
+        //         $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+        //     } catch (e) { $('#error').textContent = e.message; }
+        // };
+
+        $('#btnScaleQueue').onclick = async () => {
+            try {
+                const name = $('#newQueueName').value.trim() || q(); // primero usa el campo nueva cola
+                const w = parseInt($('#workers').value, 10);
+                const r = await api(`/admin/queues/${encodeURIComponent(name)}/scale?workers=${w}`, { method: 'PATCH' });
+                $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+            } catch (e) {
+                $('#error').textContent = e.message;
+            }
+        };
+
+
+        $('#btnRemoveQueue').onclick = async () => {
+            try {
+                const name = $('#newQueueName').value.trim() || q(); // si hay nueva cola usa esa
+                const r = await api(`/admin/queues/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+            } catch (e) {
+                $('#error').textContent = e.message;
+            }
+        };
+
+
+        // $('#btnAddQueue').onclick = async () => {
+        //     try {
+        //         const w = parseInt($('#workers').value, 10);
+        //         // 👇 Primero toma el valor del input de nueva cola
+        //         let name = $('#newQueueName').value.trim();
+        //         if (!name) name = $('#queueName').value.trim() || 'default';
+
+        //         const r = await api(`/admin/queues/${encodeURIComponent(name)}?workers=${w}`, { method: 'POST' });
+        //         $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+        //     } catch (e) {
+        //         $('#error').textContent = e.message;
+        //     }
+        // };
+        $('#btnAddQueue').onclick = async () => {
+            try {
+                const w = parseInt($('#workers').value, 10);
+                // 👇 Primero toma el valor del input de nueva cola
+                let name = $('#newQueueName').value.trim();
+                if (!name) name = $('#queueName').value.trim() || 'default';
+
+                const r = await api(`/admin/queues/${encodeURIComponent(name)}?workers=${w}`, { method: 'POST' });
+                $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+
+                // 🔥 Ajuste nuevo:
+                // Setear automáticamente la cola recién creada como cola actual
+                $('#queueName').value = name;
+
+                // Actualizar stats y tabla global para verla al instante
+                await refresh();
+                await refreshAllQueues();
+            } catch (e) {
+                $('#error').textContent = e.message;
+            }
+        };
+
+        // === MIGRAR WORKERS ENTRE COLAS ===
+        $('#btnMigrate').onclick = async () => {
+            try {
+                const from = $('#fromQueue').value.trim();
+                const to = $('#toQueue').value.trim();
+                const count = parseInt($('#migrateCount').value, 10);
+
+                if (!from || !to) {
+                    $('#error').textContent = 'Debes especificar cola origen y destino';
+                    return;
+                }
+                if (count <= 0) {
+                    $('#error').textContent = 'La cantidad debe ser mayor que 0';
+                    return;
+                }
+
+                const r = await api(`/admin/queues/migrate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&count=${count}`, {
+                    method: 'POST'
+                });
+
+                $('#queuesOutput').textContent = JSON.stringify(r, null, 2);
+            } catch (e) {
+                $('#error').textContent = e.message;
+            }
+        };
+        // Renderiza la tabla con todas las colas activas
+        async function loadQueues() {
+            try {
+                const queues = await api(`/admin/queues`);
+                const tb = document.querySelector('#queuesTable tbody');
+                tb.innerHTML = '';
+
+                Object.entries(queues).forEach(([name, workers]) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                <td>${name}</td>
+                <td>${workers}</td>
+                <td>
+                    <button class="btn-ok" onclick="inspectQueue('${name}')">Ver</button>
+                </td>
+            `;
+                    tb.appendChild(tr);
+                });
+            } catch (e) {
+                $('#error').textContent = e.message;
+            }
+        }
+ 
+
+        // =======================================================
+        // === BLOQUE 5: Acciones rápidas sobre colas ============
+        // =======================================================
+        $('#btnRefresh').onclick = refresh;
+
+        $('#btnPause').onclick = async () => {
+            try { await api(`/admin/queues/${q()}/pause`, { method: 'POST' }); await refresh(); }
+            catch (e) { $('#error').textContent = e.message; }
+        };
+
+        $('#btnResume').onclick = async () => {
+            try {
+                await api(`/admin/queues/${q()}/resume`,
+                    { method: 'POST' });
+                await refresh();
+            }
+            catch (e) { $('#error').textContent = e.message; }
+        };
+
+        $('#btnReclaim').onclick = async () => {
+            try {
+                await api(`/admin/queues/${q()}/reclaim`,
+                    { method: 'POST' });
+                await refresh();
+            }
+            catch (e) { $('#error').textContent = e.message; }
+        };
+
+        $('#btnProcess1').onclick = async () => {
+            try { await api(`/admin/queues/${q()}/process-once`, { method: 'POST' }); await refresh(); }
+            catch (e) { $('#error').textContent = e.message; }
+        };
+
+        $('#btnReplay').onclick = async () => {
+            try {
+                const max = Math.max(1, parseInt($('#replayMax').value || '50', 10));
+                await api(`/admin/queues/${q()}/dlq/replay?max=${max}`, { method: 'POST' });
+                await refresh();
+            } catch (e) { $('#error').textContent = e.message; }
+        };
+
+
+        // =======================================================
+        // === BLOQUE 6: Auto-refresh dinámico ===================
+        // =======================================================
+        // function setIntervalFromUI() {
+        //     if (timer) { clearInterval(timer); timer = null; }
+        //     const ms = parseInt($('#interval').value, 10);
+        //     if (ms > 0) timer = setInterval(refresh, ms);
+        // }
+        // let timer = null;
+let globalTimer = null;
+
+function setIntervalFromUI() {
+    if (timer) { clearInterval(timer); timer = null; }
+    if (globalTimer) { clearInterval(globalTimer); globalTimer = null; }
+
+    const ms = parseInt($('#interval').value, 10);
+
+    if (ms > 0) {
+        // Cola seleccionada (stats arriba) → cada X segundos
+        timer = setInterval(refresh, ms);
+
+        // Tabla global (todas las colas) → cada X*5 segundos
+        globalTimer = setInterval(refreshAllQueues, ms * 5);
+    }
+}
+
+        $('#interval').onchange = setIntervalFromUI;
+
+
+        // =======================================================
+        // === BLOQUE 7: Exploración de mensajes =================
+        // =======================================================
+        function summarizeRaw(raw) {
+            try {
+                const o = JSON.parse(raw);
+                const id = o.id || o.Id || o.tx?.id;
+                const ent = o.entidad || o.Entidad || o.tx?.entidad;
+                const tipo = o.tipo || o.Tipo || o.tx?.tipo;
+                const att = o.attempt ?? o.Attempt ?? o.tx?.attempt;
+                const err = o.error || o.Error;
+                const at = o.at || o.At || o.timestamp;
+
+                let s = [];
+                if (id) s.push(`id=${id}`);
+                if (ent) s.push(`entidad=${ent}`);
+                if (tipo) s.push(`tipo=${tipo}`);
+                if (typeof att !== 'undefined') s.push(`attempt=${att}`);
+                if (at) s.push(`at=${at}`);
+                if (err) s.push(`error=${(err + '').substring(0, 120)}`);
+                return s.join(' · ') || raw.substring(0, 120);
+            } catch {
+                return raw.substring(0, 160);
+            }
+        }
+
+        function renderList(items, label) {
+            const tb = $('#listTable tbody');
+            tb.innerHTML = '';
+            items.forEach((it, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${i + 1}</td><td>${summarizeRaw(it.raw)}</td>`;
+                tb.appendChild(tr);
+            });
+            $('#listInfo').textContent = `${label}: ${items.length} elemento(s) mostrados`;
+        }
+
+        // Peek cola principal
+        $('#btnPeek').onclick = async () => {
+            try {
+                const r = await api(`/admin/queues/${q()}/peek?max=50`);
+                let items = [];
+                if (r.buckets) r.buckets.forEach(b => items = items.concat(b.items));
+                else if (r.items) items = r.items;
+                renderList(items, 'Cola principal (pendientes)');
+            } catch (e) { $('#error').textContent = e.message; }
+        };
+
+        // In-Flight
+        $('#btnInflight').onclick = async () => {
+            try {
+                const r = await api(`/admin/queues/${q()}/inflight?max=50`);
+                renderList(r.items || [], 'In-Flight');
+            } catch (e) { $('#error').textContent = e.message; }
+        };
+
+        // DLQ
+        $('#btnDlqList').onclick = async () => {
+            try {
+                const r = await api(`/admin/queues/${q()}/dlq/list?max=50`);
+                renderList(r.items || [], 'DLQ');
+            } catch (e) { $('#error').textContent = e.message; }
+        };
+
+        // DLQ crudo en Redis
+        $('#btnDumpDlq').onclick = async () => {
+            try {
+                const key = `q:${q()}:dlq`;
+                const items = await api(`/admin/redis/dump?key=${encodeURIComponent(key)}`);
+                renderList(items.map(i => ({ raw: i })), 'DLQ (crudo)');
+            } catch (e) { $('#error').textContent = e.message; }
+        };
+
+
+        // =======================================================
+        // === BLOQUE 8: Inicialización al cargar =================
+        // =======================================================
+        async function fullRefresh() {
+            await refresh();          // stats de la cola seleccionada
+            await refreshAllQueues(); // tabla global
+        }
+        refresh().then(setIntervalFromUI);
+
+        // =======================================================
+        // === BLOQUE 9: Monitoreo global de colas ==============
+        // =======================================================
+
+        async function refreshAllQueues() {
+            try {
+                const queues = await api(`/admin/queues`);
+                const tb = document.querySelector('#queuesTable tbody');
+                tb.innerHTML = '';
+
+                for (const [name, workers] of Object.entries(queues)) {
+                    try {
+                        const stats = await api(`/admin/queues/${name}/stats`);
+                        const depthTotal = (stats.depths || []).reduce((a, b) => a + (b.depth || 0), 0);
+
+                        const tr = document.createElement('tr');
+tr.innerHTML = `
+  <td>${name}</td>
+  <td>${workers}</td>
+  <td>${depthTotal}</td>
+  <td>${stats.inflight ?? 0}</td>
+  <td>${stats.dlq ?? 0}</td>
+  <td>
+      <button class="btn-ok" onclick="inspectQueue('${name}')">Ver</button>
+  </td>
+`;
+tb.appendChild(tr);
+
+                    } catch (e) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td colspan="5">Error cargando stats de ${name}: ${e.message}</td>`;
+                        tb.appendChild(tr);
+                    }
+                }
+            } catch (e) {
+                $('#error').textContent = `Error en refreshAllQueues: ${e.message}`;
+            }
+        }
+
+
+    </script>
+
+</body>
+
+</html>

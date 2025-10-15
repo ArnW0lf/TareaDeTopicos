@@ -1,0 +1,51 @@
+YA ESTA COMPLETADO:
+Control de colas
+
+Pausar/Reanudar cola
+
+Listar colas y workers activos
+
+Crear nueva cola
+
+Escalar workers de una cola
+
+Eliminar cola
+
+🔹 Procesamiento de tareas
+
+Ejecutar una tarea puntual (process-once)
+
+Reencolar tarea con prioridad alta (run-now)
+
+Reclamar tareas expiradas (reclaim)
+
+
+🔹 Dead Letter Queue (DLQ)
+
+Reproceso masivo de DLQ (replay)
+
+Listar contenido del DLQ
+
+Contar elementos del DLQ
+
+🔹 Monitoreo y estado
+
+Obtener estadísticas de una cola (stats)
+
+Listar tareas pendientes (peek)
+
+Listar tareas en vuelo (inflight)
+
+Dump de cualquier clave en Redis (dump)
+
+
+FATLA:
+Reintentar una tarea puntual del DLQ
+
+Eliminar una tarea puntual del DLQ
+
+Mover tareas manualmente entre colas (por id o cantidad)
+
+Migrar workers entre colas (pasar hilos de una cola a otra)
+
+Balanceo automático de workers entre colas

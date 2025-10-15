@@ -1,0 +1,134 @@
+[
+    {
+        "url": "/api/aulas",
+        "method": "POST",
+        "body": {
+            "codigo": "LAB-01",
+            "capacidad": 25,
+            "ubicacion": "Bloque C, Piso 2"
+        }
+    },
+    {
+        "url": "/api/aulas/codigo/LAB-01",
+        "method": "PUT",
+        "body": {
+            "capacidad": 30,
+            "ubicacion": "Bloque C, Piso 2 (Renovado)"
+        }
+    },
+    {
+        "url": "/api/aulas/codigo/LAB-01",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/materias",
+        "method": "POST",
+        "body": {
+            "codigo": "MAT-101",
+            "nombre": "Cálculo I",
+            "creditos": 5,
+            "nivelId": 1
+        }
+    },
+    {
+        "url": "/api/materias/codigo/MAT-101",
+        "method": "PUT",
+        "body": {
+            "nombre": "Cálculo I (Revisado)",
+            "creditos": 6,
+            "nivelId": 1
+        }
+    },
+    {
+        "url": "/api/materias/codigo/MAT-101",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/docentes",
+        "method": "POST",
+        "body": {
+            "registro": "DOC-001",
+            "ci": "1234567",
+            "nombre": "Juan Pérez",
+            "telefono": "77712345"
+        }
+    },
+    {
+        "url": "/api/docentes/DOC-001",
+        "method": "PUT",
+        "body": {
+            "nombre": "Juan Pérez (MSc.)",
+            "telefono": "77711111"
+        }
+    },
+    {
+        "url": "/api/docentes/DOC-001",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/estudiantes",
+        "method": "POST",
+        "body": {
+            "registro": "EST-001",
+            "ci": "8888888",
+            "nombre": "Carlos Soliz",
+            "email": "carlos@test.com",
+            "password": "password123",
+            "carreraId": 1
+        }
+    },
+    {
+        "url": "/api/estudiantes/EST-001",
+        "method": "PUT",
+        "body": {
+            "nombre": "Carlos Soliz Rojas",
+            "email": "c.soliz@test.com"
+        }
+    },
+    {
+        "url": "/api/estudiantes/EST-001",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/periodosacademicos",
+        "method": "POST",
+        "body": {
+            "gestion": "2024-II",
+            "fechaInicio": "2024-08-01T00:00:00Z",
+            "fechaFin": "2024-12-15T00:00:00Z"
+        }
+    },
+    {
+        "url": "/api/periodosacademicos/2024-II",
+        "method": "PUT",
+        "body": {
+            "fechaInicio": "2024-08-05T00:00:00Z",
+            "fechaFin": "2024-12-20T00:00:00Z"
+        }
+    },
+    {
+        "url": "/api/periodosacademicos/2024-II",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/planesdeestudio",
+        "method": "POST",
+        "body": {
+            "nombre": "Plan de Estudios 2023",
+            "codigo": "PLAN-2023",
+            "fecha": "2023-01-01T00:00:00Z",
+            "carreraId": 1
+        }
+    },
+    {
+        "url": "/api/planesdeestudio/PLAN-2023",
+        "method": "PUT",
+        "body": {
+            "nombre": "Plan de Estudios 2023 (Vigente)"
+        }
+    },
+    {
+        "url": "/api/planesdeestudio/PLAN-2023",
+        "method": "DELETE"
+    }
+]

@@ -1,0 +1,26 @@
+//DESCOMPRIMIR EL ARCHIVO .RAR  "Tests" TENDRAS 4 ARCHIVOS 
+
+//MODIFICAR EL ARCHIVO ".env" CAMBIANDO EL APARTADO "IP" CON LA QUE ESTA LEVANTADO SU PROYECTO  
+
+// MODIFICAR EL CONTENIDO EL ARCHIVO "Interfaz.json" CON SUS SERVICOS EL NOMBRE DEJARLO TAL COMO ESTA
+
+//EJECUTAR EL ARCHIVO Tester.exe Y LISTO
+
+
+
+COMANDOS:
+add N | + N        -> agrega N workers
+  remove N | - N     -> quita N workers
+  set N | = N        -> fija exactamente N workers       
+  status             -> muestra conteo de workers        
+  stats              -> muestra estadísticas de endpoints
+  stop               -> detiene todos los workers        
+  quit | q           -> salir
+
+
+
+primero ejecutar 
+ .\Tester.exe
+2do
+escribir mientras corre stop 
+y escribir comandos

@@ -1,0 +1,36 @@
+[
+  {
+    "url": "http://localhost:5001/api/niveles",
+    "method": "GET"
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/1",
+    "method": "GET"
+  },
+  {
+    "url": "http://localhost:5001/api/niveles",
+    "method": "POST",
+    "body": {
+     
+      "numero": 9,
+      "nombre": "9no Semestre"
+    }
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/3",
+    "method": "PUT",
+    "body": {
+      
+      "numero": 8,
+      "nombre": "8vo Semestre (Actualizado)"
+    }
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/3",
+    "method": "DELETE"
+  },
+  {
+    "url": "http://localhost:5001/api/niveles/3/estado",
+    "method": "GET"
+  }
+]

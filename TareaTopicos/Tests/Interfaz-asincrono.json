@@ -1,0 +1,186 @@
+[
+    {
+        "url": "/api/niveles/async/numero/9",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/niveles/async",
+        "method": "POST",
+        "body": {
+            "numero": 10,
+            "nombre": "10mo Semestre"
+        }
+    },
+    {
+        "url": "/api/niveles/async/numero/10",
+        "method": "PUT",
+        "body": {
+            "nombre": "Décimo Semestre (Actualizado)"
+        }
+    },
+    {
+        "url": "/api/aulas/async",
+        "method": "POST",
+        "body": {
+            "codigo": "AUD-02",
+            "capacidad": 150,
+            "ubicacion": "Auditorio Principal"
+        }
+    },
+    {
+        "url": "/api/aulas/async/codigo/AUD-02",
+        "method": "PUT",
+        "body": {
+            "capacidad": 145,
+            "ubicacion": "Auditorio Principal (Con Proyector Nuevo)"
+        }
+    },
+    {
+        "url": "/api/aulas/async/codigo/AUD-02",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/materias/async",
+        "method": "POST",
+        "body": {
+            "codigo": "FIS-102",
+            "nombre": "Física II",
+            "creditos": 5,
+            "nivelId": 2
+        }
+    },
+    {
+        "url": "/api/materias/async/codigo/FIS-102",
+        "method": "PUT",
+        "body": {
+            "nombre": "Física II (Laboratorio Incluido)",
+            "creditos": 6,
+            "nivelId": 2
+        }
+    },
+    {
+        "url": "/api/materias/async/codigo/FIS-102",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/docentes/async",
+        "method": "POST",
+        "body": {
+            "registro": "DOC-002",
+            "ci": "7654321",
+            "nombre": "Maria Garcia",
+            "telefono": "66612345"
+        }
+    },
+    {
+        "url": "/api/docentes/async/DOC-002",
+        "method": "PUT",
+        "body": {
+            "nombre": "Maria Garcia (PhD)",
+            "telefono": "66654321"
+        }
+    },
+    {
+        "url": "/api/docentes/async/DOC-002",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/estudiantes/async",
+        "method": "POST",
+        "body": {
+            "registro": "EST-002",
+            "ci": "9999999",
+            "nombre": "Ana Mendoza",
+            "email": "ana@test.com",
+            "password": "password456",
+            "carreraId": 1
+        }
+    },
+    {
+        "url": "/api/estudiantes/async/EST-002",
+        "method": "PUT",
+        "body": {
+            "nombre": "Ana Mendoza Paz",
+            "email": "a.mendoza@test.com"
+        }
+    },
+    {
+        "url": "/api/estudiantes/async/EST-002",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/periodosacademicos/async",
+        "method": "POST",
+        "body": {
+            "gestion": "2025-I",
+            "fechaInicio": "2025-02-01T00:00:00Z",
+            "fechaFin": "2025-06-30T00:00:00Z"
+        }
+    },
+    {
+        "url": "/api/periodosacademicos/async/2025-I",
+        "method": "PUT",
+        "body": {
+            "fechaInicio": "2025-02-03T00:00:00Z",
+            "fechaFin": "2025-07-05T00:00:00Z"
+        }
+    },
+    {
+        "url": "/api/periodosacademicos/async/2025-I",
+        "method": "DELETE"
+    },
+    {
+        "url": "/api/planesdeestudio/async",
+        "method": "POST",
+        "body": {
+            "nombre": "Plan de Estudios 2024",
+            "codigo": "PLAN-2024",
+            "fecha": "2024-01-01T00:00:00Z",
+            "carreraId": 1
+        }
+    },
+    {
+        "url": "/api/planesdeestudio/async/PLAN-2024",
+        "method": "PUT",
+        "body": {
+            "nombre": "Plan de Estudios 2024 (Propuesta)"
+        }
+    },
+    {
+        "url": "/api/planesdeestudio/async/PLAN-2024",
+        "method": "DELETE"
+    },
+  {
+    "url": "/api/gruposmateria/async",
+    "method": "POST",
+    "body": {
+      "grupo": "B1",
+      "cupo": 35,
+      "estado": "ACTIVO",
+      "materiaCodigo": "FIS-102",
+      "docenteRegistro": "DOC-002",
+      "periodoGestion": "2025-I",
+      "horarioId": 2,
+      "aulaCodigo": "AUD-02"
+    }
+  },
+  {
+    "url": "/api/gruposmateria/async/grupo/B1",
+    "method": "PUT",
+    "body": {
+      "grupo": "B1",
+      "cupo": 38,
+      "estado": "ACTIVO",
+      "materiaCodigo": "FIS-102",
+      "docenteRegistro": "DOC-002",
+      "periodoGestion": "2025-I",
+      "horarioId": 2,
+      "aulaCodigo": "AUD-02"
+    }
+  },
+  {
+    "url": "/api/gruposmateria/async/grupo/B1",
+    "method": "DELETE"
+  } 
+]
+ 

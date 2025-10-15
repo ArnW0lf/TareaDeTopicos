@@ -1,0 +1,78 @@
+"Queues": [
+  {
+    "Name": "default",    // Nombre de la cola (identificador único, se usa en los endpoints y en Redis con el prefijo)
+    "Workers": 1,         // Cantidad de workers (hilos/tareas en paralelo) que procesan esta cola
+    "MaxInFlight": 50,    // Máximo de mensajes que cada worker(hilo) puede tener "en vuelo" (sacados de la cola pero aún no ACK/NACK)
+                           - ACK  = el worker confirmó que terminó la tarea → se elimina de la cola
+                           - NACK = el worker informó fallo → el mensaje se reencola (si aún no superó MaxRetries) o va a DLQ
+    "MaxRetries": 5,      // Número máximo de reintentos antes de mandar el mensaje a la DLQ 
+                           - DLQ = cola muerta
+    "BaseBackoffMs": 300, // Tiempo base de backoff (ms) para reintentos fallidos; se puede multiplicar (exponencial)
+    "Priorities": 3,      // Niveles de prioridad por transaccion
+                           - (0,1,2 → mientras más alto, más prioridad)
+    "MaxQueued": 0        // Límite de mensajes en espera en la cola 
+                           - 0 = ilimitado 
+  }
+]
+  "RedisQueue": {
+    "KeyPrefix": "q:",              //aislas mi cola de otros sistemas
+    "VisibilityTimeoutSeconds": 60  //
+  }
+
+{nombre}=default  nombre de la cola
+
+/admin /colas /{nombre} /pausa  
+*para pausar la cola
+
+
+/admin /colas /{nombre} /reanudar
+*para reanudar la cola
+
+
+/admin /colas /{nombre} /estadísticas
+*muestra:
+    - cuantas tareas hay en la cola 
+         . desgloza por prioridad
+         . cuantas estan vivas/ en DefaultProcessor
+         . cuantas cayeron en DLQ: (q fallaron todos los reintentos) → dlq."cola muerta"
+         . si la cola esta pausada: paused (true/false).
+
+
+/admin/colas/{nombre}/dlq/replay
+* toma las tareas de dql y las reinyecta a la cola principal
+
+
+/admin/colas/{nombre}/reclamar
+* cuando el worker(hilo) muere o la tarea tarda mas que el VisibilityTimeoutSeconds
+* La transacción queda atrapada en la lista "sub - cola in-flight" que se encuentra en redis (reservada pero sin ACK/NACK)
+* Este endpoint la rescata y la vuelve a meter a la cola principal (depth)
+* Así otro worker puede retomarla y procesarla
+
+/admin/queues/{nombre}/run-now/{id}
+* toma un transaccion especifica por su id y la ejecuta inmediatamente
+
+
+/admin/colas/{nombre}/procesar-una-vez
+* toma la primer transaccion de la cola respetando la prioridad
+
+
+
+
+
+
+
+
+
+
+
+
+
+n resumen
+
+Migraciones → carpeta Data/Migrations (crear tabla ProcessedMessages).
+
+Servicio de idempotencia → carpeta Services/IdempotencyGuard.cs.
+
+Registro de DI → Program.cs.
+
+Uso → en tus Processors (NivelProcessor, DefaultProcessor, etc.).

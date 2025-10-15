@@ -1,0 +1,67 @@
+ServicioA/
+├─ Controllers/
+│  ├─ AdminController.cs
+│  ├─ HealthController.cs
+│  ├─ NivelesController.cs
+│  ├─ ReadinessController.cs
+│  └─ TransaccionesController.cs
+│  └─ InscripcionesController.cs
+├─ Data/
+│  └─ ServicioAContext.cs
+
+├─ Extensions/
+│  └─ ServiceCollectionExtensions.cs
+
+├─ Models/
+│  ├─ Nivel.cs   // model de prueba lo dema mismo paso 
+│  ├─ QueueDescriptor.cs
+│  ├─ QueuesConfig.cs
+│  ├─ Transaccion.cs
+│  └─ WorkerDescriptor.cs
+│  └─ ProcessedMessage.cs
+│  └─ ProcessResult.cs
+│  └─ DetalleInscripcion.cs
+│  └─ GrupoMateria.cs
+│  └─ Estudiante.cs
+│  └─ PeriodoAcademico.cs
+├─ Contracts/
+│  ├─ CallbackEvent.cs
+
+├─ Options/
+│  ├─ QueueOptions.cs
+│  └─ RedisOptions.cs
+
+├─ Services/
+│  ├─ Processors/
+│  │  ├─ DefaultProcessor.cs
+│  │  ├─ IProcessor.cs
+│  │  ├─ IQueueProcessor.cs
+│  │  ├─ InscripcionProcessor.cs
+│  │  └─ NivelProcessor.cs  //archivo de prueba para model los demas igual 
+│  ├─ seeders/
+│  │  └─ ISeeder.cs
+│  ├─ CallbackService.cs
+│  ├─ ConfigWatcher.cs
+│  ├─ DeadLetterService.cs
+│  ├─ IBackgroundTaskQueue.cs
+│  ├─ IdempotencyGuard.cs
+│  ├─ IIdempotencyGuard.cs
+│  ├─ ITransaccionStore.cs
+│  ├─ QueueFullException.cs
+│  ├─ QueueManager.cs
+│  ├─ QueueOptions.cs
+│  ├─ RateLimiter.cs
+│  ├─ RedisScaleBackplane.cs
+│  ├─ RedisTaskQueue.cs
+│  ├─ RedisTransaccionStore.cs
+│  ├─ VisibilityReclaimer.cs
+│  ├─ WorkerHost.cs
+│  ├─ WorkerPool.cs
+│  └─ WorkerService.cs
+│ 
+├─ appsettings.json
+├─ Dockerfile
+├─ Program.cs
+
+raiz
+└─docker-compose.yml

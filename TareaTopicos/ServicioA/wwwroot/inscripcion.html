@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulador de Inscripción</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 30px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      width: 400px;
+      margin: auto;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .pending { background: #fff3cd; color: #856404; }
+    .confirmed { background: #d4edda; color: #155724; }
+    .rejected { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Inscripción Asíncrona</h2>
+    <p>Simula la inscripción con cupos limitados.</p>
+    <button id="btnInscribir">Inscribirme</button>
+
+    <div id="estado" class="status" style="display:none;">...</div>
+  </div>
+
+  <script>
+    const API = "http://localhost:5001/api";
+
+    async function inscribirse() {
+      const btn = document.getElementById("btnInscribir");
+      const statusEl = document.getElementById("estado");
+
+      btn.disabled = true;
+      statusEl.style.display = "block";
+      statusEl.textContent = "⏳ Enviando solicitud...";
+      statusEl.className = "status pending";
+
+      try {
+        // 1️⃣ Enviar solicitud
+        const res = await fetch(`${API}/inscripciones/async`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            registro: "20250001",
+            periodoId: 1,
+            materias: [{ materiaCodigo: "INF101", grupo: "A" }]
+          })
+        });
+
+        const data = await res.json();
+        if (!data.id) throw new Error("Respuesta inválida del servidor");
+        const txId = data.id;
+
+        statusEl.textContent = "🕒 Pendiente (procesando en cola...)";
+
+        // 2️⃣ Polling para ver estado
+        const interval = setInterval(async () => {
+          const r = await fetch(`${API}/transacciones/${txId}`);
+          const t = await r.json();
+          const estado = t.estado?.toUpperCase();
+
+          if (estado === "COMPLETADO" || estado === "CONFIRMADA") {
+            statusEl.textContent = "✅ Confirmada";
+            statusEl.className = "status confirmed";
+            clearInterval(interval);
+            btn.disabled = false;
+          }
+          else if (estado === "RECHAZADA" || estado === "ERROR") {
+            statusEl.textContent = "❌ Rechazada (sin cupos)";
+            statusEl.className = "status rejected";
+            clearInterval(interval);
+            btn.disabled = false;
+          }
+        }, 2000);
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "⚠️ Error al inscribirse";
+        statusEl.className = "status rejected";
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("btnInscribir").addEventListener("click", inscribirse);
+  </script>
+</body>
+</html>

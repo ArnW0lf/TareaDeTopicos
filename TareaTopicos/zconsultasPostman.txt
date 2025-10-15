@@ -1,0 +1,189 @@
+Post
+http://localhost:5112/api/estudiantes/login
+{
+  "Registro": "20251234",
+  "password": "7894561"
+}
+
+
+
+services/IBackgroundTaskQueue.cs
+R. define que metodo debe implementar en la cola
+Services/Worker.cs
+R. servicio en segundo plano 
+saca una transaccion de la cola lo cambia de estado lo deserializa para obtener el obtener
+el objeto original
+ejecuta la logica en la BD 
+y marca la transaccion como completado o error
+
+RedisTaskQueue.cs
+r. rl que mete las transacciones en redis
+ITransaccionStore.cs
+r. guarda y consulta el estado de cada transaccion
+
+
+
+====================== redis========================
+Paso 1: Entrar a Redis dentro del contenedor Docker
+docker exec -it redis_db redis-cli
+
+
+Eso te abre la consola de Redis (prompt 127.0.0.1:6379>).
+
+Paso 2: Confirmar que la clave existe
+KEYS tx:*
+
+Esto te listará todas las transacciones que tenés guardadas, algo como:
+
+1) "tx:1972b5fe-03e9-4ade-81a9-025ae16dfd79"
+2) "tx:5761c4b1-5495-4021-96c9-5dd101a3ed3f"
+...
+
+Paso 3: Ver la transacción específica
+HGETALL tx:1972b5fe-03e9-4ade-81a9-025ae16dfd79
+
+Reset total
+docker compose down
+docker compose down -v
+docker compose up -d --build
+docker compose logs -f servicioa
+
+//BASE DE DefaultProcessor
+docker exec -it postgres_db psql -U postgres
+\c universidad
+\dt
+\! clear
+
+SELECT * FROM "Aulas";
+SELECT * FROM "Carreras";
+SELECT * FROM "DetallesInscripciones";
+SELECT * FROM "Docentes";
+SELECT * FROM "Estudiantes";
+SELECT * FROM "GruposMaterias";
+SELECT * FROM "HistorialesAcademicos";
+SELECT * FROM "Horarios";
+SELECT * FROM "Inscripciones";
+SELECT * FROM "Materias";
+SELECT * FROM "Niveles";
+SELECT * FROM "PeriodosAcademicos";
+SELECT * FROM "PlanMaterias";
+SELECT * FROM "PlanesEstudio";
+http://localhost:5001/simulador.html
+
+\x off : para tabla bonito
+SELECT "Id", "Entidad", "Estado", "Payload"
+FROM "Transacciones"
+WHERE "Entidad" = 'Inscripcion'
+ORDER BY "CreatedAt" DESC
+LIMIT 3;
+SELECT *
+FROM "Materias"
+WHERE "Codigo" = 'MAT-150';
+
+//DOCKER
+docker compose up -d --build servicioa
+
+//Modificas código
+docker compose up -d --build servicioa
+
+
+//levantar todo los contenedores 
+docker compose up -d
+
+//levantar los servicios
+docker compose up -d servicioa
+
+//Quieres ver la salida
+docker compose logs -f servicioa
+
+644193
+//detener todos los contenedores
+docker stop $(docker ps -q)
+
+
+Una vez dentro:
+
+En el panel izquierdo (Browser), haz clic derecho sobre Servers → Create → Server…
+
+En la pestaña General, escribe:
+
+Name: postgres_db (o cualquier nombre que quieras)
+
+En la pestaña Connection, completa así:
+
+Campo	Valor
+Host name/address	postgres_db
+Port	5432
+Maintenance database	universidad
+Username	postgres
+Password	1234
+
+
+
+
+
+http://localhost:5001/queue-dashboard.html
+BASE DE DATOS DE DOCKER
+http://localhost:5050/browser/
+http://localhost:5001/swagger/index.html
+
+ //para reiniciar si se cambia models
+rm -rf ServicioA/Migrations
+dotnet ef migrations add InitialCreate -p ServicioA -s ServicioA
+docker compose down -v
+docker compose up -d --build
+
+
+?queue=cola1
+
+//Crear una cola llamada apache1 con 2 hilos
+POST http://localhost:5001/admin/queues/apache1?workers=2
+{
+  "queue": "apache1",
+  "workers": 2,
+  "created": true
+}
+//Escalar esa cola a 5 hilos
+PATCH http://localhost:5001/admin/queues/apache1/scale?workers=5
+{
+  "queue": "apache1",
+  "workers": 5,
+  "scaled": true
+}
+//Listar todas las colas activas
+GET http://localhost:5001/admin/queues
+{
+  "default": 1,
+  "apache1": 5
+}
+//Borrar la cola apache1
+DELETE http://localhost:5001/admin/queues/apache1
+{
+  "queue": "apache1",
+  "removed": true
+}
+//Mover n hilos de una cola a otra 
+POST http://localhost:5001/admin/queues/migrate?from=apache1&to=apache2&count=2
+//Balancear misma cantidad de hilos en todas las colas 
+POST http://localhost:5001/admin/queues/balance
+//para crear cola especializada
+POST http://localhost:5001/admin/queues?name=inscripciones&workers=5&processor=NivelProcessor
+
+
+
+
+
+GET http://localhost:5001/api/inscripciones/materias-disponibles/20251234
+GET http://localhost:5001/api/inscripciones/grupos/INF119
+POST http://localhost:5001/api/inscripciones/async
+{
+  "registro": "20251234",
+  "periodoId": 1,
+  "materias": [
+    {
+      "materiaCodigo": "MAT101",
+      "grupo": "A"
+    } 
+  ]
+}
+GET http://localhost:5001/api/inscripciones/estado-inscripcion/20251234

@@ -1,0 +1,227 @@
+======================================================================
+==          GUÍA COMPLETA DE ENDPOINTS PARA EL FRONTEND           ==
+======================================================================
+
+URL Base del Backend: http://localhost:5001
+
+----------------------------------------------------------------------
+-- 1. AUTENTICACIÓN
+----------------------------------------------------------------------
+
+### Login de Estudiante
+*   **Endpoint**: `POST /api/estudiantes/login`
+*   **Descripción**: Autentica a un estudiante usando su registro y contraseña. Devuelve un token JWT que debe ser guardado y enviado en las cabeceras de las siguientes peticiones.
+*   **Ejemplo de Uso**:
+    ```http
+    POST http://localhost:5001/api/estudiantes/login
+    Content-Type: application/json
+
+    {
+      "Registro": "20251234",
+      "password": "7894561"
+    }
+    ```
+*   **Prerrequisitos**: El estudiante debe existir en la base de datos con las credenciales correctas.
+
+----------------------------------------------------------------------
+-- 2. GESTIÓN DE MATERIAS (CRUD para Administradores)
+----------------------------------------------------------------------
+
+### Obtener Lista de Materias (Paginada)
+*   **Endpoint**: `GET /api/materias`
+*   **Descripción**: Devuelve una lista paginada de todas las materias existentes.
+*   **Ejemplo de Uso**: `GET http://localhost:5001/api/materias?page=1&pageSize=10`
+*   **Prerrequisitos**: Token JWT en la cabecera `Authorization: Bearer <token>`.
+
+### Crear una Materia (Síncrono)
+*   **Endpoint**: `POST /api/materias`
+*   **Descripción**: Crea una nueva materia de forma inmediata. Responde cuando la operación en la base de datos ha terminado.
+*   **Ejemplo de Uso**:
+    ```http
+    POST http://localhost:5001/api/materias
+    Content-Type: application/json
+
+    {
+      "Codigo": "INF-513",
+      "Nombre": "Tópicos Avanzados de Programación",
+      "Creditos": 4,
+      "NivelId": 9
+    }
+    ```
+*   **Prerrequisitos**: Token JWT. El `NivelId` debe corresponder a un nivel existente en la BD.
+
+### Actualizar una Materia (Síncrono)
+*   **Endpoint**: `PUT /api/materias/codigo/{codigo}`
+*   **Descripción**: Actualiza los datos de una materia existente, identificada por su código.
+*   **Ejemplo de Uso**:
+    ```http
+    PUT http://localhost:5001/api/materias/codigo/INF-513
+    Content-Type: application/json
+
+    {
+      "Nombre": "Tópicos de Programación (Revisado)",
+      "Creditos": 5,
+      "NivelId": 9
+    }
+    ```
+*   **Prerrequisitos**: Token JWT. La materia con el código especificado debe existir.
+
+### Eliminar una Materia (Síncrono)
+*   **Endpoint**: `DELETE /api/materias/codigo/{codigo}`
+*   **Descripción**: Elimina una materia por su código.
+*   **Ejemplo de Uso**: `DELETE http://localhost:5001/api/materias/codigo/INF-513`
+*   **Prerrequisitos**: Token JWT. La materia no debe tener dependencias (ej. no estar en un plan de estudios o grupo).
+
+### Crear/Actualizar/Eliminar Materia (Asíncrono)
+*   **Endpoints**:
+    *   `POST /api/materias/async`
+    *   `PUT /api/materias/async/codigo/{codigo}`
+    *   `DELETE /api/materias/async/codigo/{codigo}`
+*   **Descripción**: Realizan las mismas operaciones de escritura pero de forma asíncrona. El servidor responde inmediatamente con un `202 Accepted` y un `transaccionId`. La operación se procesa en segundo plano.
+*   **Ejemplo de Uso**:
+    ```http
+    POST http://localhost:5001/api/materias/async
+    // (mismo payload que la versión síncrona)
+    ```
+*   **Prerrequisitos**: Token JWT.
+
+### Consultar Estado de Transacción Asíncrona
+*   **Endpoint**: `GET /api/materias/estado/{id}`
+*   **Descripción**: Permite consultar el estado de una operación asíncrona (crear, actualizar, eliminar) usando el `transaccionId` devuelto.
+*   **Ejemplo de Uso**: `GET http://localhost:5001/api/materias/estado/a1b2c3d4-e5f6-7890-1234-567890abcdef`
+*   **Prerrequisitos**: Token JWT. El ID debe ser un GUID válido de una transacción existente.
+
+----------------------------------------------------------------------
+-- 3. PROCESO DE INSCRIPCIÓN (Para Estudiantes)
+----------------------------------------------------------------------
+
+### Validar Selección de Materias (¡Endpoint Clave para la UI!)
+*   **Endpoint**: `POST /api/inscripciones-sync/validar`
+*   **Descripción**: Simula una inscripción sin guardarla en la base de datos. Devuelve un análisis detallado de cada materia seleccionada, indicando si es válida o si tiene errores (falta de cupo, prerrequisitos, etc.). Ideal para dar feedback en tiempo real al estudiante mientras arma su horario.
+*   **Ejemplo de Uso**:
+    ```http
+    POST http://localhost:5001/api/inscripciones-sync/validar
+    Content-Type: application/json
+
+    {
+      "estudianteId": 1,
+      "periodoId": 1,
+      "grupoMateriaIds": [10, 15, 22]
+    }
+    ```
+*   **Prerrequisitos**: Token JWT. Los IDs de estudiante, período y grupos de materia deben ser válidos.
+
+### Realizar Inscripción Completa (Asíncrono - Recomendado)
+*   **Endpoint**: `POST /api/inscripciones-sync/async/completa`
+*   **Descripción**: Encola la solicitud final de inscripción del estudiante. El servidor responde inmediatamente con un `202 Accepted` y un `transaccionId`. La UI puede mostrar un mensaje de "Procesando..." y verificar el estado más tarde.
+*   **Ejemplo de Uso**:
+    ```http
+    POST http://localhost:5001/api/inscripciones-sync/async/completa
+    Content-Type: application/json
+
+    {
+      "estudianteRegistro": "20251234",
+      "periodoGestion": "2024-1",
+      "materiaGrupoCodigos": ["MAT-101-A", "FIS-100-C", "INF-513-SA"]
+    }
+    ```
+*   **Prerrequisitos**: Token JWT. El estudiante, período y los códigos de materia/grupo deben existir y ser válidos.
+
+### Realizar Inscripción Completa (Síncrono)
+*   **Endpoint**: `POST /api/inscripciones-sync/sync/completa`
+*   **Descripción**: Realiza la inscripción de forma inmediata. El frontend debe esperar a que todas las validaciones y escrituras en la base de datos terminen. Útil para casos donde se necesita confirmación instantánea y la operación es rápida.
+*   **Ejemplo de Uso**: Mismo payload que la versión asíncrona.
+*   **Prerrequisitos**: Token JWT.
+
+### Obtener Datos de una Inscripción
+*   **Endpoint**: `GET /api/inscripciones-sync/{id}`
+*   **Descripción**: Devuelve la información de una inscripción específica, incluyendo datos del estudiante y del período.
+*   **Ejemplo de Uso**: `GET http://localhost:5001/api/inscripciones-sync/123`
+*   **Prerrequisitos**: Token JWT. El ID debe corresponder a una inscripción existente.
+
+----------------------------------------------------------------------
+-- 4. ADMINISTRACIÓN DE COLAS (Para Monitoreo y Operaciones)
+----------------------------------------------------------------------
+
+### Dashboard Web de Colas
+*   **Endpoint**: `GET /queue-dashboard.html`
+*   **Descripción**: Abre una interfaz web simple para visualizar el estado de las colas de tareas en tiempo real.
+*   **Ejemplo de Uso**: Abrir `http://localhost:5001/queue-dashboard.html` en el navegador.
+*   **Prerrequisitos**: Acceso a la URL del backend.
+
+### Listar Todas las Colas Activas
+*   **Endpoint**: `GET /admin/queues`
+*   **Descripción**: Devuelve un objeto JSON con los nombres de las colas y el número de workers (hilos) que tiene cada una.
+*   **Ejemplo de Uso**: `GET http://localhost:5001/admin/queues`
+*   **Prerrequisitos**: Ninguno.
+
+### Crear una Nueva Cola
+*   **Endpoint**: `POST /admin/queues/{nombre}`
+*   **Descripción**: Crea dinámicamente una nueva cola de tareas con un número específico de workers.
+*   **Ejemplo de Uso**: `POST http://localhost:5001/admin/queues/inscripciones-urgentes?workers=5`
+*   **Prerrequisitos**: Ninguno.
+
+### Escalar Workers de una Cola
+*   **Endpoint**: `PATCH /admin/queues/{nombre}/scale`
+*   **Descripción**: Aumenta o disminuye el número de workers que procesan una cola.
+*   **Ejemplo de Uso**: `PATCH http://localhost:5001/admin/queues/default/scale?workers=3`
+*   **Prerrequisitos**: La cola debe existir.
+
+### Eliminar una Cola
+*   **Endpoint**: `DELETE /admin/queues/{nombre}`
+*   **Descripción**: Detiene todos los workers de una cola y la elimina del sistema.
+*   **Ejemplo de Uso**: `DELETE http://localhost:5001/admin/queues/inscripciones-urgentes`
+*   **Prerrequisitos**: La cola debe existir.
+
+----------------------------------------------------------------------
+-- 5. GESTIÓN DE NIVELES (CRUD para Administradores)
+----------------------------------------------------------------------
+
+### Obtener Lista de Niveles
+*   **Endpoint**: `GET /api/niveles`
+*   **Descripción**: Devuelve una lista de todos los niveles académicos (semestres) existentes.
+*   **Ejemplo de Uso**: `GET http://localhost:5001/api/niveles`
+*   **Prerrequisitos**: Token JWT en la cabecera `Authorization: Bearer <token>`.
+
+### Crear un Nivel (Síncrono)
+*   **Endpoint**: `POST /api/niveles`
+*   **Descripción**: Crea un nuevo nivel de forma inmediata.
+*   **Ejemplo de Uso**:
+    ```http
+    POST http://localhost:5001/api/niveles
+    Content-Type: application/json
+
+    {
+      "Numero": 1,
+      "Nombre": "Primer Semestre"
+    }
+    ```
+*   **Prerrequisitos**: Token JWT.
+
+### Actualizar un Nivel (Síncrono)
+*   **Endpoint**: `PUT /api/niveles/{id}`
+*   **Descripción**: Actualiza los datos de un nivel existente.
+*   **Ejemplo de Uso**:
+    ```http
+    PUT http://localhost:5001/api/niveles/1
+    Content-Type: application/json
+
+    {
+      "Numero": 1,
+      "Nombre": "1er Semestre"
+    }
+    ```
+*   **Prerrequisitos**: Token JWT. El ID del nivel debe existir.
+
+### Crear/Actualizar/Eliminar Nivel (Asíncrono)
+*   **Endpoints**:
+    *   `POST /api/niveles/async`
+    *   `PUT /api/niveles/async/{id}`
+    *   `DELETE /api/niveles/async/{id}`
+*   **Descripción**: Realizan las operaciones de escritura de niveles de forma asíncrona, devolviendo un `transaccionId` para seguimiento.
+*   **Ejemplo de Uso (Crear)**:
+    ```http
+    POST http://localhost:5001/api/niveles/async
+    // (mismo payload que la versión síncrona)
+    ```
+*   **Prerrequisitos**: Token JWT.
