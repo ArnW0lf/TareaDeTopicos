@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TAREATOPICOS.ServicioA.Data;
 using TAREATOPICOS.ServicioA.Services;
 using TAREATOPICOS.ServicioA.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TAREATOPICOS.ServicioA.Controllers;
 
@@ -418,5 +419,71 @@ public class InscripcionesController : ControllerBase
 
         _log.LogInformation("📋 {Cantidad} inscripciones encontradas para {Registro}", resultado.Count, registro);
         return Ok(resultado);
+    }
+
+    // ===========================================
+    // DELETE /api/inscripciones/{inscripcionId}
+    // ===========================================
+    [HttpDelete("{inscripcionId:int}")]
+    [Authorize] // 🔐 ¡Importante! Protegemos el endpoint.
+    public async Task<IActionResult> CancelarInscripcion(int inscripcionId, CancellationToken ct)
+    {
+        // 1. Obtener el registro del estudiante desde el token JWT.
+        var registroEstudiante = User.Claims.FirstOrDefault(c => c.Type == "Registro")?.Value; // ✨ CORREGIDO: Usar "Registro" para que coincida con el token.
+        if (string.IsNullOrEmpty(registroEstudiante))
+        {
+            return Unauthorized(new { mensaje = "Token inválido o no contiene el registro del estudiante." });
+        }
+
+        _log.LogInformation("📥 Solicitud de cancelación para InscripcionId {InscripcionId} por parte de {Registro}", inscripcionId, registroEstudiante);
+
+        // 2. Iniciar una transacción para garantizar la atomicidad (o se hace todo, o no se hace nada).
+        await using var dbTransaction = await _context.Database.BeginTransactionAsync(ct);
+
+        try
+        {
+            // 3. Buscar la inscripción, incluyendo sus detalles, el estudiante y las materias para la validación y logs.
+            var inscripcion = await _context.Inscripciones
+                .Include(i => i.Estudiante)
+                .Include(i => i.Detalles)
+                    .ThenInclude(d => d.GrupoMateria)
+                        .ThenInclude(g => g.Materia)
+                .FirstOrDefaultAsync(i => i.Id == inscripcionId, ct);
+
+            if (inscripcion == null)
+            {
+                return NotFound(new { mensaje = "Inscripción no encontrada." });
+            }
+
+            // 4. Validar que el estudiante autenticado es el dueño de la inscripción.
+            if (inscripcion.Estudiante.Registro != registroEstudiante)
+            {
+                _log.LogWarning("🚫 Acceso denegado: {RegistroA} intentó cancelar inscripción de {RegistroB}", registroEstudiante, inscripcion.Estudiante.Registro);
+                return Forbid("No tienes permiso para cancelar esta inscripción.");
+            }
+
+            // 5. Devolver los cupos a los grupos de materias correspondientes.
+            foreach (var detalle in inscripcion.Detalles)
+            {
+                detalle.GrupoMateria.Cupo++;
+                _log.LogInformation("📈 Cupo devuelto para {Codigo}-{Grupo}. Nuevo cupo: {Cupo}", detalle.GrupoMateria.Materia.Codigo, detalle.GrupoMateria.Grupo, detalle.GrupoMateria.Cupo);
+            }
+
+            // 6. Eliminar los detalles de la inscripción y luego la inscripción principal.
+            _context.DetallesInscripciones.RemoveRange(inscripcion.Detalles);
+            _context.Inscripciones.Remove(inscripcion);
+
+            await _context.SaveChangesAsync(ct);
+            await dbTransaction.CommitAsync(ct); // Confirmar todos los cambios en la base de datos.
+
+            _log.LogInformation("✅ Inscripción {InscripcionId} cancelada exitosamente por {Registro}", inscripcionId, registroEstudiante);
+            return Ok(new { mensaje = "Inscripción cancelada exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            await dbTransaction.RollbackAsync(ct); // Si algo falla, revertir todo.
+            _log.LogError(ex, "💥 Error al cancelar la inscripción {InscripcionId}", inscripcionId);
+            return StatusCode(500, new { mensaje = "Error interno al cancelar la inscripción." });
+        }
     }
 }
