@@ -6,6 +6,12 @@ primero si es necesario: npm install
 si hay un error: npm install vue-toastification@next
 npm run dev
 
+nuevo estudiante
+
+"registro": "20250000",
+"password": "123456789",
+
+
 ingresar a http://localhost:5050/
 borrar inscripcion 
 -- Primero, borra el historial académico asociado a las inscripciones del estudiante

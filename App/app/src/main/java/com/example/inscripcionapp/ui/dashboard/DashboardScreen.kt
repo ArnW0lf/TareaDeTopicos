@@ -238,19 +238,23 @@ fun InscripcionItem(
 
 @Composable
 fun StatusBadge(estado: String) {
+    // ✨ Lógica para personalizar el mensaje de error de cupo
+    val textoMostrado = if (estado.equals("SIN_CUPO", true)) {
+        "Te ganaron el cupo choco"
+    } else {
+        estado
+    }
+
     val (color, textColor) = when (estado.uppercase()) {
         "VALIDO", "COMPLETADA" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-        "ERROR", "CON_ERRORES", "RECHAZADA" -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        "ERROR", "CON_ERRORES", "RECHAZADA", "SIN_CUPO" -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
         "PENDIENTE" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
         else -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
     }
 
-    Card(
-        shape = RoundedCornerShape(50), // Forma de píldora
-        colors = CardDefaults.cardColors(containerColor = color)
-    ) {
+    Card(shape = RoundedCornerShape(50), colors = CardDefaults.cardColors(containerColor = color)) {
         Text(
-            text = estado,
+            text = textoMostrado,
             color = textColor,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
@@ -258,6 +262,7 @@ fun StatusBadge(estado: String) {
         )
     }
 }
+
 
 @Composable
 fun GruposDialog(

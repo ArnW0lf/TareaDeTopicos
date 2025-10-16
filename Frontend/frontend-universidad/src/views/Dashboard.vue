@@ -97,7 +97,9 @@
                         <div>
                           <strong>{{ materia.nombre }}</strong> ({{ materia.codigo }} - Grupo {{ materia.grupo }})
                         </div>
-                        <span :class="getStatusClass(materia.estado)" class="badge rounded-pill align-self-center p-2">{{ materia.estado }}</span>
+                        <span :class="getStatusClass(materia.estado)" class="badge rounded-pill align-self-center p-2">
+                          {{ getStatusText(materia.estado) }}
+                        </span>
                       </li>
                     </ul>
                     <!-- Botón de Cancelar -->
@@ -389,6 +391,13 @@ const stopPolling = () => {
   }
 };
 
+const getStatusText = (estado) => {
+  if (estado?.toUpperCase() === 'SIN_CUPO') {
+    return 'Te ganaron el cupo choco';
+  }
+  return estado;
+};
+
 const getStatusClass = (estado) => {
   switch (estado?.toUpperCase()) {
     case 'VALIDO':
@@ -397,6 +406,7 @@ const getStatusClass = (estado) => {
       return 'text-bg-success';
     case 'ERROR':
     case 'CON_ERRORES':
+    case 'SIN_CUPO': // ✨ Añadimos el estado para que se muestre en rojo
       return 'text-bg-danger';
     case 'PENDIENTE':
       return 'text-bg-warning';
