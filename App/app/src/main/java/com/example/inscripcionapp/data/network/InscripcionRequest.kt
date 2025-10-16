@@ -8,5 +8,6 @@ data class MateriaInscripcion(
 data class InscripcionRequest(
     val registro: String,
     val periodoId: Int,
-    val materias: List<MateriaInscripcion>
+    val materias: List<MateriaInscripcion>,
+    val idempotencyKey: String
 )

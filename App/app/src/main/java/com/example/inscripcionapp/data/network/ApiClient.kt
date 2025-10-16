@@ -12,10 +12,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.DELETE
 import retrofit2.http.POST
 import retrofit2.http.Path
 
 // --------------------------------------------------------------------------------
+
+data class MensajeResponse(val mensaje: String)
+
 // ⚠️ IMPORTANTE: CAMBIA ESTA IP
 // Usa la IP de tu computadora en la red local.
 // Para encontrarla, en Windows abre cmd y escribe: ipconfig
@@ -38,6 +42,9 @@ interface ApiService {
 
     @GET("api/inscripciones/estado-inscripcion/{registro}")
     suspend fun getEstadoInscripcion(@Path("registro") registro: String): Response<List<InscripcionEstadoResponse>>
+
+    @DELETE("api/inscripciones/{inscripcionId}")
+    suspend fun cancelarInscripcion(@Path("inscripcionId") inscripcionId: Int): Response<MensajeResponse>
 }
 
 object ApiClient {

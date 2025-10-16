@@ -198,7 +198,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     periodoId = 1, // Asumimos ID de período fijo como en la web
                     materias = _uiState.value.seleccion.map {
                         MateriaInscripcion(it.materiaCodigo, it.grupo.grupo)
-                    }
+                    },
+                    // ✨ Añadimos la clave de idempotencia para que coincida con el backend
+                    idempotencyKey = "insc-android-$registro-${System.currentTimeMillis()}"
                 )
 
                 val response = ApiClient.instance.confirmarInscripcion(payload)
@@ -213,6 +215,27 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             } catch (e: Exception) {
                 Log.e("DashboardViewModel", "Error al confirmar inscripción", e)
                 _uiState.update { it.copy(seleccionError = "Error de conexión al confirmar.") }
+            } finally {
+                _uiState.update { it.copy(isConfirming = false) }
+            }
+        }
+    }
+
+    fun onCancelarInscripcion(inscripcionId: Int) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isConfirming = true) } // Reutilizamos el estado de carga
+            try {
+                val response = ApiClient.instance.cancelarInscripcion(inscripcionId)
+                if (response.isSuccessful) {
+                    // Refrescar la lista de inscripciones y materias disponibles
+                    loadEstadoInscripciones()
+                    loadMateriasDisponibles()
+                } else {
+                    _uiState.update { it.copy(seleccionError = "Error al cancelar la inscripción.") }
+                }
+            } catch (e: Exception) {
+                Log.e("DashboardViewModel", "Error al cancelar inscripción", e)
+                _uiState.update { it.copy(seleccionError = "Error de conexión al cancelar.") }
             } finally {
                 _uiState.update { it.copy(isConfirming = false) }
             }

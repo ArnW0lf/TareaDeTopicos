@@ -100,6 +100,16 @@
                         <span :class="getStatusClass(materia.estado)" class="badge rounded-pill align-self-center p-2">{{ materia.estado }}</span>
                       </li>
                     </ul>
+                    <!-- Botón de Cancelar -->
+                    <button
+                      v-if="['CONFIRMADA', 'PARCIAL', 'PENDIENTE'].includes(inscripcion.estado)"
+                      @click="cancelarInscripcion(inscripcion.id)"
+                      class="btn btn-danger btn-sm mt-3"
+                      :disabled="enviando"
+                    >
+                      <i class="bi bi-x-circle"></i>
+                      Cancelar Inscripción
+                    </button>
                   </div>
                 </div>
               </div>
@@ -154,12 +164,14 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useToast } from 'vue-toastification';
 import apiClient from '../api';
 import { jwtDecode } from 'jwt-decode';
 import { Modal } from 'bootstrap';
 
 const loading = ref(true);
 const error = ref(null);
+const toast = useToast();
 const enviando = ref(false);
 
 const materiasDisponibles = ref([]);
@@ -304,21 +316,62 @@ const quitarDeSeleccion = (index) => {
   seleccion.value.splice(index, 1);
 };
 
+const cancelarInscripcion = async (inscripcionId) => {
+  // 1. Pedir confirmación al usuario
+  if (!window.confirm('¿Estás seguro de que quieres cancelar esta inscripción? Esta acción no se puede deshacer.')) {
+    return;
+  }
+
+  const token = localStorage.getItem('user-token');
+  if (!token) {
+    toast.error('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+    // Opcional: redirigir al login
+    // router.push('/login');
+    return;
+  }
+
+  enviando.value = true;
+  try {
+    // 2. Llamar al endpoint DELETE con el token de autorización
+    const response = await apiClient.delete(`/inscripciones/${inscripcionId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    // 3. Mostrar notificación de éxito y refrescar la lista
+    toast.success(response.data.mensaje || 'Inscripción cancelada exitosamente.');
+    await fetchEstadoInscripciones(); // Recargamos las inscripciones
+  } catch (error) {
+    const mensajeError = error.response?.data?.mensaje || 'Error al cancelar la inscripción.';
+    toast.error(mensajeError);
+  } finally {
+    enviando.value = false;
+  }
+};
+
 const confirmarInscripcion = async () => {
   enviando.value = true;
   const registro = getRegistroFromToken();
   const payload = {
     registro: registro,
     periodoId: 1, // Asumimos un ID de período fijo por ahora
-    materias: seleccion.value.map(s => ({ materiaCodigo: s.materiaCodigo, grupo: s.grupo.grupo }))
+    materias: seleccion.value.map(s => ({ materiaCodigo: s.materiaCodigo, grupo: s.grupo.grupo })),
+    // ✨ 1. Generar y añadir la clave de idempotencia
+    idempotencyKey: `insc-${registro}-${Date.now()}`
   };
 
   try {
-    await apiClient.post('/inscripciones/async', payload);
+    const response = await apiClient.post('/inscripciones/async', payload);
+    toast.success(response.data.mensaje || 'Solicitud de inscripción enviada correctamente.');
     seleccion.value = []; // Limpiar carrito
     await fetchEstadoInscripciones(); // Cargar estado inmediatamente
   } catch (err) {
-    error.value = "Ocurrió un error al enviar la inscripción.";
+    // ✨ 2. Mostrar el error específico del backend
+    const mensajeError = err.response?.data?.mensaje || 'Ocurrió un error al enviar la inscripción.';
+    toast.error(mensajeError);
+    // Mantenemos el error.value por si se quiere mostrar en el template
+    error.value = mensajeError;
   } finally {
     enviando.value = false;
   }
@@ -339,6 +392,7 @@ const stopPolling = () => {
 const getStatusClass = (estado) => {
   switch (estado?.toUpperCase()) {
     case 'VALIDO':
+    case 'INSCRITO':
     case 'COMPLETADA':
       return 'text-bg-success';
     case 'ERROR':

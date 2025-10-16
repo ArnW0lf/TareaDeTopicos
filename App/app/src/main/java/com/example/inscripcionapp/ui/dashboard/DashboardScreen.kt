@@ -32,7 +32,8 @@ fun DashboardScreen(
     onGrupoSeleccionado: (Grupo) -> Unit,
     onQuitarDeSeleccion: (GrupoSeleccionado) -> Unit,
     onConfirmarInscripcion: () -> Unit,
-    onClearSeleccionError: () -> Unit
+    onClearSeleccionError: () -> Unit,
+    onCancelarInscripcion: (Int) -> Unit // ✨ Añadimos el nuevo callback
 ) {
     // Muestra un Snackbar cuando hay un error en la selección (choque de horario, etc.)
     LaunchedEffect(uiState.seleccionError) {
@@ -119,7 +120,10 @@ fun DashboardScreen(
                     )
                 }
                 items(uiState.inscripciones) { inscripcion ->
-                    InscripcionItem(inscripcion = inscripcion)
+                    InscripcionItem(
+                        inscripcion = inscripcion,
+                        onCancelar = { onCancelarInscripcion(inscripcion.id) } // ✨ Pasamos la función
+                    )
                 }
             } else if (!uiState.isLoading) {
                 item {
@@ -169,7 +173,10 @@ fun MateriaItem(materia: MateriaDisponible, onVerGruposClicked: () -> Unit) {
 }
 
 @Composable
-fun InscripcionItem(inscripcion: com.example.inscripcionapp.data.network.InscripcionEstadoResponse) {
+fun InscripcionItem(
+    inscripcion: com.example.inscripcionapp.data.network.InscripcionEstadoResponse,
+    onCancelar: () -> Unit
+) {
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -204,6 +211,23 @@ fun InscripcionItem(inscripcion: com.example.inscripcionapp.data.network.Inscrip
                         ) {
                             Text("${materia.nombre} (G: ${materia.grupo})")
                             StatusBadge(estado = materia.estado)
+                        }
+                    }
+                }
+
+                // ✨ CORRECCIÓN: Mostrar el botón si la inscripción contiene materias ya inscritas.
+                // El backend cancela el bloque completo, por lo que solo se necesita un botón.
+                val puedeCancelar = inscripcion.materias.any { it.estado.equals("INSCRITO", true) }
+
+                if (puedeCancelar) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(onClick = onCancelar, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+                            Text("Cancelar Inscripción")
                         }
                     }
                 }

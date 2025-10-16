@@ -71,7 +71,8 @@ class MainActivity : ComponentActivity() {
                                 onGrupoSeleccionado = dashboardViewModel::onGrupoSeleccionado,
                                 onQuitarDeSeleccion = dashboardViewModel::onQuitarDeSeleccion,
                                 onConfirmarInscripcion = dashboardViewModel::onConfirmarInscripcion,
-                                onClearSeleccionError = dashboardViewModel::clearSeleccionError
+                                onClearSeleccionError = dashboardViewModel::clearSeleccionError,
+                                onCancelarInscripcion = dashboardViewModel::onCancelarInscripcion
                             )
                         }
                     }

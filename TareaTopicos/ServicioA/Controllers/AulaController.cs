@@ -196,55 +196,6 @@ private static bool IsUniqueViolation(DbUpdateException ex)
     // Ajusta si tienes nombre de índice/constraint específico
     return msg.Contains("unique") || msg.Contains("duplicate") || msg.Contains("uq_") || msg.Contains("idx_unique");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // === ENDPOINTS ASÍNCRONOS ===
 
     [HttpPost("async")]
