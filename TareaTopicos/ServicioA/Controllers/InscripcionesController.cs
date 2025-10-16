@@ -30,7 +30,7 @@ public class InscripcionesController : ControllerBase
 
     // === DTOs ===
     public record MateriaGrupoDto(string MateriaCodigo, string Grupo);
-    public record InscripcionCreateDto(string Registro, int PeriodoId, List<MateriaGrupoDto> Materias);
+    public record InscripcionCreateDto(string Registro, int PeriodoId, List<MateriaGrupoDto> Materias, string IdempotencyKey);
     // ===========================================
     // GET /api/inscripciones/materias-disponibles/{registro}
     // ===========================================
@@ -136,12 +136,23 @@ public class InscripcionesController : ControllerBase
         [FromQuery] DateTimeOffset? notBeforeUtc = null,
         CancellationToken ct = default)
     {
-        if (dto == null || string.IsNullOrWhiteSpace(dto.Registro) || dto.PeriodoId <= 0 ||
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Registro) || string.IsNullOrWhiteSpace(dto.IdempotencyKey) || dto.PeriodoId <= 0 ||
             dto.Materias == null || !dto.Materias.Any())
-            return BadRequest(new { mensaje = "Registro, PeriodoId y al menos una materia son requeridos." });
+            return BadRequest(new { mensaje = "Registro, IdempotencyKey, PeriodoId y al menos una materia son requeridos." });
 
         try
         {
+            // Idempotencia: Buscar si ya existe una transacción con esta clave
+            var txExistente = await _context.Transacciones
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.IdempotencyKey == dto.IdempotencyKey, ct);
+
+            if (txExistente != null)
+            {
+                _log.LogInformation("🔁 Petición idempotente detectada. Devolviendo transacción existente {TxId}", txExistente.Id);
+                return Conflict(new { mensaje = "Esta solicitud ya fue procesada.", transactionId = txExistente.Id });
+            }
+
             // 🔹 Buscar estudiante
             var estudianteId = await _context.Estudiantes
                 .Where(e => e.Registro == dto.Registro)
@@ -188,7 +199,7 @@ public class InscripcionesController : ControllerBase
                 CallbackUrl = _cfg["Webhook:DefaultUrl"],
                 CallbackSecret = _cfg["Webhook:DefaultSecret"],
                 CreatedAt = DateTimeOffset.UtcNow,
-                IdempotencyKey = $"{dto.Registro}-{dto.PeriodoId}-{Guid.NewGuid():N}"
+                IdempotencyKey = dto.IdempotencyKey
             };
             _context.Transacciones.Add(tx);
             await _context.SaveChangesAsync(ct);
