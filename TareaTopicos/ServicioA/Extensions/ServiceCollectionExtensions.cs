@@ -11,13 +11,10 @@ namespace TAREATOPICOS.ServicioA.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        /// <summary>
-        /// Registro central de Redis, colas, workers, opciones y health.
-        /// </summary>
         public static IServiceCollection AddServicioAQueues(this IServiceCollection services, IConfiguration cfg)
         {
             // ============================
-            // 1) Opciones de configuración (bind desde appsettings.json)
+            // 1) Opciones de configuración
             // ============================
             services.Configure<RedisOptions>(cfg.GetSection("Redis"));
             services.Configure<RedisQueueOptions>(cfg.GetSection("RedisQueue"));
@@ -29,16 +26,15 @@ namespace TAREATOPICOS.ServicioA.Extensions
             // ============================
             // 2) Redis Connection
             // ============================
-            var redisConn = cfg.GetSection("Redis")["ConnectionString"] ?? "localhost:6379";
-            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConn));
+            // SE HA ELIMINADO LA CONEXIÓN DUPLICADA DE AQUÍ.
+            // La única conexión a Redis se define en Program.cs y se inyecta
+            // automáticamente en los servicios que la necesiten.
 
             // ============================
             // 3) Infraestructura de colas
             // ============================
             services.AddSingleton<IBackgroundTaskQueue, RedisTaskQueue>();
             services.AddSingleton<ITransaccionStore, RedisTransaccionStore>();
-
-            // ⚡ QueueManager: debe ser Scoped porque depende de IOptionsSnapshot
             services.AddScoped<QueueManager>();
 
             // ============================
@@ -56,8 +52,6 @@ namespace TAREATOPICOS.ServicioA.Extensions
             // ============================
             services.AddScoped<DefaultProcessor>();
             services.AddScoped<NivelProcessor>();
-
-            // Se registran como IQueueProcessor (inyección polimórfica)
             services.AddScoped<IQueueProcessor, NivelProcessor>();
             services.AddScoped<IQueueProcessor, DefaultProcessor>();
 
