@@ -31,6 +31,7 @@ services:
 
   servicioa:
     build: ./ServicioA
+    image: arnulfo1990/servicio-a:latest
     container_name: servicioa
     depends_on:
       postgres_db:

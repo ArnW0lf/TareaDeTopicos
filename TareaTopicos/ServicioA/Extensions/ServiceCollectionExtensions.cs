@@ -24,21 +24,14 @@ namespace TAREATOPICOS.ServicioA.Extensions
             });
 
             // ============================
-            // 2) Redis Connection
-            // ============================
-            // SE HA ELIMINADO LA CONEXIÓN DUPLICADA DE AQUÍ.
-            // La única conexión a Redis se define en Program.cs y se inyecta
-            // automáticamente en los servicios que la necesiten.
-
-            // ============================
-            // 3) Infraestructura de colas
+            // 2) Infraestructura de colas
             // ============================
             services.AddSingleton<IBackgroundTaskQueue, RedisTaskQueue>();
             services.AddSingleton<ITransaccionStore, RedisTransaccionStore>();
             services.AddScoped<QueueManager>();
 
             // ============================
-            // 4) Servicios de soporte
+            // 3) Servicios de soporte
             // ============================
             services.AddSingleton<DeadLetterService>();
             services.AddSingleton<VisibilityReclaimer>();
@@ -48,15 +41,17 @@ namespace TAREATOPICOS.ServicioA.Extensions
             services.AddSingleton<QueueStateService>();
 
             // ============================
-            // 5) Processors de negocio
+            // 4) Processors de negocio
             // ============================
             services.AddScoped<DefaultProcessor>();
             services.AddScoped<NivelProcessor>();
+
+            // REGISTRO ÚNICO de IQueueProcessor
             services.AddScoped<IQueueProcessor, NivelProcessor>();
             services.AddScoped<IQueueProcessor, DefaultProcessor>();
 
             // ============================
-            // 6) WorkerHost (HostedService)
+            // 5) WorkerHost (HostedService)
             // ============================
             services.AddHostedService<WorkerHost>();
 

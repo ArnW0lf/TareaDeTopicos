@@ -13,6 +13,8 @@ using TAREATOPICOS.ServicioA.Services.Options;
 using Polly;
 using Polly.Extensions.Http;
 using System.Net;
+using HealthChecks.NpgSql;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -86,20 +88,81 @@ builder.Services.AddDbContext<ServicioAContext>(options => options.UseNpgsql(dbC
 string redisConnectionString;
 if (builder.Environment.IsProduction())
 {
-    redisConnectionString = Environment.GetEnvironmentVariable("REDIS_URL");
-    if (string.IsNullOrEmpty(redisConnectionString))
+    var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL");
+    if (string.IsNullOrEmpty(redisUrl))
     {
         throw new InvalidOperationException("La variable de entorno REDIS_URL no está configurada.");
     }
+    redisConnectionString = redisUrl;
 }
 else
 {
     redisConnectionString = builder.Configuration["Redis:ConnectionString"];
 }
+// === CONEXIÓN A REDIS - SOLUCIÓN DIRECTA ===
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<Program>>();
 
-var redisConfiguration = ConfigurationOptions.Parse(redisConnectionString);
-redisConfiguration.AbortOnConnectFail = false;
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfiguration));
+    if (builder.Environment.IsProduction())
+    {
+        var redisUrl = redisConnectionString;
+        logger.LogInformation("Conectando a Redis en producción...");
+
+        // SOLUCIÓN DIRECTA - Usar ConfigurationOptions explícitamente
+        var config = new ConfigurationOptions
+        {
+            AbortOnConnectFail = false,
+            ConnectTimeout = 15000,
+            SyncTimeout = 15000,
+            AsyncTimeout = 15000,
+            ConnectRetry = 5,
+            ReconnectRetryPolicy = new LinearRetry(2000),
+            KeepAlive = 30
+        };
+
+        // Parsear manualmente la URL de Redis
+        if (redisUrl.StartsWith("redis://"))
+        {
+            var uri = new Uri(redisUrl);
+            config.EndPoints.Add($"{uri.Host}:{uri.Port}");
+
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                var userInfo = uri.UserInfo.Split(':');
+                if (userInfo.Length == 2)
+                {
+                    config.Password = userInfo[1];
+                }
+            }
+
+            logger.LogInformation($"Redis config - Host: {uri.Host}, Port: {uri.Port}");
+        }
+        else
+        {
+            config.EndPoints.Add(redisUrl);
+        }
+
+        try
+        {
+            var redis = ConnectionMultiplexer.Connect(config);
+            logger.LogInformation("Conexión a Redis establecida exitosamente");
+            return redis;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error crítico conectando a Redis");
+            throw;
+        }
+    }
+    else
+    {
+        // Desarrollo
+        var connectionString = redisConnectionString;
+        logger.LogInformation("Conectando a Redis en desarrollo: {ConnectionString}", connectionString);
+        return ConnectionMultiplexer.Connect(connectionString);
+    }
+});
 
 
 // ... (El resto de tu código no necesita cambios, se mantiene igual)
@@ -160,7 +223,11 @@ builder.Services.AddScoped<QueueManager>();
 builder.Services.AddScoped<ITransaccionStore, RedisTransaccionStore>();
 builder.Services.AddServicioAQueues(builder.Configuration);
 builder.Services.AddSingleton<QueueStateService>();
-builder.Services.AddHealthChecks();
+// Agregar health check específico para Redis
+builder.Services.AddHealthChecks()
+    .AddRedis(redisConnectionString, "redis", tags: new[] { "ready" })
+    .AddNpgSql(dbConnectionString, tags: new[] { "ready" });
+
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-key";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -210,5 +277,15 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+
+// En la sección de endpoints
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false
+});
 app.Run("http://0.0.0.0:5000");
