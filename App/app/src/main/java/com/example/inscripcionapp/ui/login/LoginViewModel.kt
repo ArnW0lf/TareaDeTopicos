@@ -49,12 +49,12 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     Registro = registro,
                     password = contrasena
                 )
-                val response = ApiClient.instance.login(request)
+                val response = ApiClient.instance.login(request) 
 
                 if (response.isSuccessful && response.body()?.token != null) {
                     val token = response.body()!!.token
                     Log.d("LoginViewModel", "Login exitoso. Token: $token")
-                    userPreferencesRepository.saveUserCredentials(token, registro)
+                    userPreferencesRepository.saveUserCredentials(token, registro) 
                     _uiState.update { it.copy(isLoading = false, loginSuccess = true) }
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = "Registro o contraseña incorrectos.") }

@@ -74,7 +74,7 @@ fun LoginScreen(
 
         // Botón de Login
         Button(
-            onClick = onLoginClick,
+            onClick = onLoginClick,  
             modifier = Modifier.fillMaxWidth(),
             enabled = !uiState.isLoading
         ) {

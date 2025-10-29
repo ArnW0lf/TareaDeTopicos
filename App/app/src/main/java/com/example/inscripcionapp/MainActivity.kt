@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
                                 uiState = loginUiState,
                                 onRegistroChange = loginViewModel::onRegistroChange,
                                 onContrasenaChange = loginViewModel::onContrasenaChange,
-                                onLoginClick = loginViewModel::login
+                                onLoginClick = loginViewModel::login 
                             )
                         }
                         composable("dashboard") {

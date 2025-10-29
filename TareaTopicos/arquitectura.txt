@@ -1,67 +1,87 @@
-ServicioA/
-├─ Controllers/
-│  ├─ AdminController.cs
-│  ├─ HealthController.cs
-│  ├─ NivelesController.cs
-│  ├─ ReadinessController.cs
-│  └─ TransaccionesController.cs
-│  └─ InscripcionesController.cs
-├─ Data/
-│  └─ ServicioAContext.cs
-
-├─ Extensions/
-│  └─ ServiceCollectionExtensions.cs
-
-├─ Models/
-│  ├─ Nivel.cs   // model de prueba lo dema mismo paso 
-│  ├─ QueueDescriptor.cs
-│  ├─ QueuesConfig.cs
-│  ├─ Transaccion.cs
-│  └─ WorkerDescriptor.cs
-│  └─ ProcessedMessage.cs
-│  └─ ProcessResult.cs
-│  └─ DetalleInscripcion.cs
-│  └─ GrupoMateria.cs
-│  └─ Estudiante.cs
-│  └─ PeriodoAcademico.cs
-├─ Contracts/
-│  ├─ CallbackEvent.cs
-
-├─ Options/
-│  ├─ QueueOptions.cs
-│  └─ RedisOptions.cs
-
-├─ Services/
-│  ├─ Processors/
-│  │  ├─ DefaultProcessor.cs
-│  │  ├─ IProcessor.cs
-│  │  ├─ IQueueProcessor.cs
-│  │  ├─ InscripcionProcessor.cs
-│  │  └─ NivelProcessor.cs  //archivo de prueba para model los demas igual 
-│  ├─ seeders/
-│  │  └─ ISeeder.cs
-│  ├─ CallbackService.cs
-│  ├─ ConfigWatcher.cs
-│  ├─ DeadLetterService.cs
-│  ├─ IBackgroundTaskQueue.cs
-│  ├─ IdempotencyGuard.cs
-│  ├─ IIdempotencyGuard.cs
-│  ├─ ITransaccionStore.cs
-│  ├─ QueueFullException.cs
-│  ├─ QueueManager.cs
-│  ├─ QueueOptions.cs
-│  ├─ RateLimiter.cs
-│  ├─ RedisScaleBackplane.cs
-│  ├─ RedisTaskQueue.cs
-│  ├─ RedisTransaccionStore.cs
-│  ├─ VisibilityReclaimer.cs
-│  ├─ WorkerHost.cs
-│  ├─ WorkerPool.cs
-│  └─ WorkerService.cs
-│ 
-├─ appsettings.json
-├─ Dockerfile
-├─ Program.cs
-
-raiz
-└─docker-compose.yml
+ServicioA/                     // Carpeta principal del microservicio.
+├─ Controllers/                 // Maneja las peticiones HTTP (API).
+│  ├─ AdminController.cs        // Endpoints para administrar colas.
+│  ├─ AuthController.cs         // Autenticación de usuarios.
+│  ├─ AulaController.cs         // CRUD para la entidad Aula.
+│  ├─ DocenteController.cs      // CRUD para la entidad Docente.
+│  ├─ EstudianteController.cs   // CRUD para la entidad Estudiante.
+│  ├─ GrupoMateriaController.cs // CRUD para grupos de materias.
+│  ├─ HealthController.cs       // Endpoint de chequeo de salud.
+│  ├─ HistorialAcademicoController.cs// Consulta historial académico.
+│  ├─ NivelesController.cs      // CRUD para la entidad Nivel.
+│  ├─ MateriaController.cs      // CRUD para la entidad Materia.
+│  ├─ PeriodoAcademicoController.cs// CRUD para períodos académicos.
+│  ├─ PlanEstudioController.cs  // CRUD para planes de estudio.
+│  ├─ ReadinessController.cs    // Endpoint de chequeo de disponibilidad.
+│  ├─ ReportesController.cs     // Genera diversos reportes.
+│  ├─ TransaccionesController.cs// Consulta estado de transacciones.
+│  └─ InscripcionesController.cs// Endpoints para gestionar inscripciones.
+├─ Data/                        // Acceso a la base de datos.
+│  └─ ServicioAContext.cs       // Contexto de Entity Framework Core.
+├─ Extensions/                  // Métodos de extensión de C#.
+│  └─ ServiceCollectionExtensions.cs// Registra servicios en DI.
+├─ Models/                      // Clases de dominio y DTOs.
+│  ├─ Aula.cs                   // Modelo de la entidad Aula.
+│  ├─ DetalleInscripcion.cs     // Modelo detalle de inscripción.
+│  ├─ Docente.cs                // Modelo de la entidad Docente.
+│  ├─ Estudiante.cs             // Modelo de la entidad Estudiante.
+│  ├─ GrupoMateria.cs           // Modelo para grupos de materias.
+│  ├─ HistorialAcademico.cs     // Modelo de historial académico.
+│  ├─ LoginRequest.cs           // DTO para solicitud de login.
+│  ├─ LoginResponse.cs          // DTO para respuesta de login.
+│  ├─ Materia.cs                // Modelo de la entidad Materia.
+│  ├─ Nivel.cs                  // Modelo de la entidad Nivel.
+│  ├─ PeriodoAcademico.cs       // Modelo para períodos académicos.
+│  ├─ PlanEstudio.cs            // Modelo de Plan de Estudio.
+│  ├─ ProcessedMessage.cs       // Modelo para idempotencia.
+│  ├─ ProcessResult.cs          // Resultado del procesamiento de tarea.
+│  ├─ QueueDescriptor.cs        // Describe una cola de trabajo.
+│  ├─ QueuesConfig.cs           // Configuración de las colas.
+│  ├─ Transaccion.cs            // Modelo para tareas asíncronas.
+│  ├─ WorkerDescriptor.cs       // Describe un worker (hilo).
+├─ Contracts/                   // Contratos de datos (DTOs).
+│  ├─ CallbackEvent.cs          // Evento para notificaciones webhook.
+├─ Options/                     // Clases para configuraciones.
+│  ├─ QueueOptions.cs           // Opciones de configuración de colas.
+│  └─ RedisOptions.cs           // Opciones de conexión a Redis.
+├─ Services/                    // Lógica de negocio y servicios.
+│  ├─ Processors/               // Lógica para procesar tareas asíncronas.
+│  │  ├─ DefaultProcessor.cs     // Procesador de tareas por defecto.
+│  │  ├─ AulaProcessor.cs        // Procesa tareas de aula.
+│  │  ├─ DocenteProcessor.cs     // Procesa tareas de docente.
+│  │  ├─ EstudianteProcessor.cs  // Procesa tareas de estudiante.
+│  │  ├─ GrupoMateriaProcessor.cs// Procesa tareas de grupo.
+│  │  ├─ HistorialAcademicoProcessor.cs// Procesa tareas de historial.
+│  │  ├─ IProcessor.cs         // Interfaz base para procesadores.
+│  │  ├─ IQueueProcessor.cs    // Interfaz para procesadores de colas.
+│  │  ├─ InscripcionProcessor.cs // Procesa tareas de inscripción.
+│  │  ├─ MateriaProcessor.cs     // Procesa tareas de materia.
+│  │  └─ NivelProcessor.cs       // Procesa tareas del modelo Nivel.
+│  │  ├─ PeriodoAcademicoProcessor.cs// Procesa tareas de período.
+│  │  └─ PlanEstudioProcessor.cs // Procesa tareas de plan.
+│  ├─ seeders/                  // Lógica para poblar la BD.
+│  │  └─ ISeeder.cs            // Interfaz para los seeders.
+│  │  ├─ InitialDataSeeder.cs  // Población inicial de datos.
+│  │  └─ TestUserSeeder.cs     // Población de usuarios de prueba.
+│  ├─ CallbackService.cs        // Envía notificaciones de webhook.
+│  ├─ ConfigWatcher.cs          // Vigila cambios en configuración.
+│  ├─ DeadLetterService.cs      // Gestiona la cola de mensajes muertos.
+│  ├─ IBackgroundTaskQueue.cs   // Define la interfaz de la cola.
+│  ├─ IdempotencyGuard.cs       // Implementa la lógica de idempotencia.
+│  ├─ IIdempotencyGuard.cs      // Interfaz para la idempotencia.
+│  ├─ ITransaccionStore.cs      // Define cómo guardar transacciones.
+│  ├─ QueueManager.cs           // Gestiona la creación de colas.
+│  ├─ RateLimiter.cs            // Limita la tasa de peticiones.
+│  ├─ RedisScaleBackplane.cs    // Sincroniza workers entre instancias.
+│  ├─ RedisTaskQueue.cs         // Implementación de cola con Redis.
+│  ├─ RedisTransaccionStore.cs  // Guarda transacciones en Redis.
+│  ├─ VisibilityReclaimer.cs    // Reclama tareas "en vuelo" perdidas.
+│  ├─ WorkerHost.cs             // Orquesta los workers de una cola.
+│  ├─ WorkerPool.cs             // Administra un pool de workers.
+│  ├─ QueueFullException.cs     // Excepción para cola llena.
+│  └─ WorkerService.cs          // Servicio de fondo que procesa tareas.
+├─ appsettings.json             // Archivo de configuración principal.
+├─ Dockerfile                   // Define la imagen de contenedor.
+├─ Program.cs                   // Punto de entrada de la aplicación.
+raiz/
+└─ docker-compose.yml           // Orquesta los contenedores Docker.

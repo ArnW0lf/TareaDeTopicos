@@ -58,7 +58,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 // Obtenemos el registro guardado
                 val registro = userPreferencesRepository.userRegistro.first()
                 if (registro != null) {
-                    val response = ApiClient.instance.getMateriasDisponibles(registro)
+                    val response = ApiClient.instance.getMateriasDisponibles(registro) 
                     if (response.isSuccessful) {
                         _uiState.update { it.copy(materias = response.body() ?: emptyList(), isLoading = false) }
                     } else {
@@ -76,7 +76,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(materiaSeleccionadaParaVerGrupos = materia, isLoadingGrupos = true, errorGrupos = null) }
         viewModelScope.launch {
             try {
-                val response = ApiClient.instance.getGruposPorMateria(materia.codigo)
+                val response = ApiClient.instance.getGruposPorMateria(materia.codigo) 
                 if (response.isSuccessful) {
                     _uiState.update {
                         // Extraemos la lista de la propiedad "grupos" del objeto de respuesta
@@ -200,10 +200,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                         MateriaInscripcion(it.materiaCodigo, it.grupo.grupo)
                     },
                     // ✨ Añadimos la clave de idempotencia para que coincida con el backend
-                    idempotencyKey = "insc-android-$registro-${System.currentTimeMillis()}"
+                    idempotencyKey = "insc-android-$registro-${System.currentTimeMillis()}" 
                 )
 
-                val response = ApiClient.instance.confirmarInscripcion(payload)
+                val response = ApiClient.instance.confirmarInscripcion(payload) 
                 if (response.isSuccessful) {
                     // Limpiamos el carrito y refrescamos el estado
                     _uiState.update { it.copy(seleccion = emptyList()) }
@@ -225,7 +225,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             _uiState.update { it.copy(isConfirming = true) } // Reutilizamos el estado de carga
             try {
-                val response = ApiClient.instance.cancelarInscripcion(inscripcionId)
+                val response = ApiClient.instance.cancelarInscripcion(inscripcionId) 
                 if (response.isSuccessful) {
                     // Refrescar la lista de inscripciones y materias disponibles
                     loadEstadoInscripciones()
@@ -246,7 +246,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val registro = userPreferencesRepository.userRegistro.first() ?: return@launch
             try {
-                val response = ApiClient.instance.getEstadoInscripcion(registro)
+                val response = ApiClient.instance.getEstadoInscripcion(registro) 
                 if (response.isSuccessful) {
                     val inscripciones = response.body() ?: emptyList()
                     _uiState.update { it.copy(inscripciones = inscripciones) }

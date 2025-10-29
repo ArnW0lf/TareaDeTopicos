@@ -7,35 +7,80 @@ using TAREATOPICOS.ServicioA.Data;
 using TAREATOPICOS.ServicioA.Extensions;
 using TAREATOPICOS.ServicioA.Services.Seeders;
 using TAREATOPICOS.ServicioA.Services.Processors;
-using TAREATOPICOS.ServicioA.Services; 
+using TAREATOPICOS.ServicioA.Services;
 using TAREATOPICOS.ServicioA.Services.Options;
 
 using Polly;
 using Polly.Extensions.Http;
 using System.Net;
-
-
-
-
-
+using StackExchange.Redis; // CAMBIO RENDER: Añadido para la conexión con Redis
 
 var builder = WebApplication.CreateBuilder(args);
-// === CORS ===
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend",
-        policy => policy
-            .WithOrigins("http://localhost:5173") // puerto de tu Vite
-            .AllowAnyHeader()
-            .AllowAnyMethod());
-});
 
+// === CONFIGURACIÓN CENTRALIZADA ===
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
-builder.Services.AddDbContext<ServicioAContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// === CORS ===
+// CAMBIO RENDER: Hacemos la política de CORS dinámica.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        // En desarrollo, permite el acceso desde tu Vite local
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else // En producción (Render)
+        {
+            // Lee la URL del frontend desde una variable de entorno
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
+            if (!string.IsNullOrEmpty(frontendUrl))
+            {
+                policy.WithOrigins(frontendUrl)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
+        }
+    });
+});
+
+
+// === CONEXIÓN A LA BASE DE DATOS (POSTGRESQL) ===
+// CAMBIO RENDER: Conexión dinámica a PostgreSQL
+string dbConnectionString;
+if (builder.Environment.IsProduction())
+{
+    // En Render, usa la variable de entorno DATABASE_URL
+    dbConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+}
+else
+{
+    // En local, usa la cadena de appsettings.json
+    dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+}
+builder.Services.AddDbContext<ServicioAContext>(options => options.UseNpgsql(dbConnectionString));
+
+
+// === CONEXIÓN A REDIS ===
+// CAMBIO RENDER: Conexión dinámica a Redis
+string redisConnectionString;
+if (builder.Environment.IsProduction())
+{
+    // En Render, usa la variable de entorno REDIS_URL
+    redisConnectionString = Environment.GetEnvironmentVariable("REDIS_URL");
+}
+else
+{
+    // En local, busca la configuración de Redis (ajusta "Redis:ConnectionString" si es diferente en tu appsettings)
+    redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+}
+// Registra la conexión de Redis como un Singleton para que toda la app la reutilice
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
 
 
 // 1) Define la política (inline, sin método)
@@ -56,11 +101,8 @@ builder.Services
     })
     .AddPolicyHandler(retryPolicy);
 
-
-
-
-
-
+// ... (El resto de tu código no necesita cambios)
+// ... (Aquí va todo el registro de tus Processors, Services, Swagger, JWT, etc.)
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -107,49 +149,23 @@ builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.PlanDeEstu
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IProcessor,
                            TAREATOPICOS.ServicioA.Services.Processors.PlanDeEstudioProcessor>();  
 
-/*
-builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.GrupoMateriaProcessor>();
-builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IProcessor,
-                           TAREATOPICOS.ServicioA.Services.Processors.GrupoMateriaProcessor>();                             
-*/
-// Router (IQueueProcessor) → DefaultProcessor
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IQueueProcessor,
                            TAREATOPICOS.ServicioA.Services.Processors.DefaultProcessor>();
 
-// ... resto de tus servicios
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.IIdempotencyGuard,
                            TAREATOPICOS.ServicioA.Services.IdempotencyGuard>();
 
-// builder.Services.AddHttpClient<CallbackService>();         // para webhooks
-
-// builder.Services.AddHttpClient<CallbackService>(c =>
-// {
-//     c.Timeout = TimeSpan.FromSeconds(5);
-// });
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.DetalleInscripcionProcessor>();
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IProcessor,
                            TAREATOPICOS.ServicioA.Services.Processors.DetalleInscripcionProcessor>();
-
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-// Processor para DetalleInscripcion (POST/PUT/DELETE)
-
-
 
 builder.Services.AddScoped<QueueManager>();
 
 builder.Services.AddScoped<ITransaccionStore, RedisTransaccionStore>(); // tu store real
 
-// Tu registro de colas/servicios propios
 builder.Services.AddServicioAQueues(builder.Configuration);
 builder.Services.AddSingleton<QueueStateService>();
 
-// Health checks
 builder.Services.AddHealthChecks();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-key";
@@ -173,43 +189,29 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
-
-
  
-// Tu registro de colas/servicios propios
-builder.Services.AddServicioAQueues(builder.Configuration);
-// WorkerHost: como Singleton e IHostedService
 builder.Services.AddSingleton<WorkerHost>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<WorkerHost>());
 
-
 var app = builder.Build();
-
  
-// 🚀 APLICAR MIGRACIONES AQUÍ (después de Build, antes de Run)
-// 👇 MIGRAR + SEED (dentro de Docker también)
 using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
     var db = sp.GetRequiredService<TAREATOPICOS.ServicioA.Data.ServicioAContext>();
-
-    // Crea tablas si faltan (aplica todas las migraciones)
     await db.Database.MigrateAsync();
 
-    // Lee variable SEED (true/false) para poblar
     var cfg = sp.GetRequiredService<IConfiguration>();
     var doSeed = cfg.GetValue<bool>("SEED");
     if (doSeed)
     {
-        // Ejecuta TODOS los seeders registrados en DI
-        var seeders = sp.GetServices<ISeeder>(); // tu interfaz
+        var seeders = sp.GetServices<ISeeder>();
         foreach (var seeder in seeders)
             await seeder.SeedAsync(db);
 
         await db.SaveChangesAsync();
     }
 }
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -218,9 +220,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseRouting();
 
-// === CORS ===
 app.UseCors("AllowFrontend");
-
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -231,6 +231,4 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
-//app.Run();
-app.Run("http://0.0.0.0:5000"); // Escucha en todas las interfaces de red
-
+app.Run("http://0.0.0.0:5000");

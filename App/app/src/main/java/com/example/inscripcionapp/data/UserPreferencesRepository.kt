@@ -35,7 +35,7 @@ class UserPreferencesRepository(private val context: Context) {
     // Función para guardar el token y el registro del usuario
     suspend fun saveUserCredentials(token: String, registro: String) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.AUTH_TOKEN] = token
+            preferences[PreferencesKeys.AUTH_TOKEN] = token 
             preferences[PreferencesKeys.USER_REGISTRO] = registro
         }
     }
