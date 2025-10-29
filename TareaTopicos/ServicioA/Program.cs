@@ -80,8 +80,8 @@ else
     redisConnectionString = builder.Configuration["Redis:ConnectionString"];
 }
 // Registra la conexión de Redis como un Singleton para que toda la app la reutilice
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
-
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfiguration));
+redisConfiguration.AbortOnConnectFail = false;
 
 // 1) Define la política (inline, sin método)
 var retryPolicy =
