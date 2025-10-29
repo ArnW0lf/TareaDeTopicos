@@ -79,9 +79,11 @@ else
     // En local, busca la configuración de Redis (ajusta "Redis:ConnectionString" si es diferente en tu appsettings)
     redisConnectionString = builder.Configuration["Redis:ConnectionString"];
 }
-// Registra la conexión de Redis como un Singleton para que toda la app la reutilice
+
+// Configura y registra la conexión de Redis como un Singleton
+var redisConfiguration = ConfigurationOptions.Parse(redisConnectionString);
+redisConfiguration.AbortOnConnectFail = false; // No abortar si la conexión falla al inicio
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfiguration));
-redisConfiguration.AbortOnConnectFail = false;
 
 // 1) Define la política (inline, sin método)
 var retryPolicy =
@@ -142,12 +144,12 @@ builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IProcessor
 
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.PeriodoAcademicoProcessor>();
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IProcessor,
-                           TAREATOPICOS.ServicioA.Services.Processors.PeriodoAcademicoProcessor>();    
+                           TAREATOPICOS.ServicioA.Services.Processors.PeriodoAcademicoProcessor>();
 
 
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.PlanDeEstudioProcessor>();
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IProcessor,
-                           TAREATOPICOS.ServicioA.Services.Processors.PlanDeEstudioProcessor>();  
+                           TAREATOPICOS.ServicioA.Services.Processors.PlanDeEstudioProcessor>();
 
 builder.Services.AddScoped<TAREATOPICOS.ServicioA.Services.Processors.IQueueProcessor,
                            TAREATOPICOS.ServicioA.Services.Processors.DefaultProcessor>();
@@ -189,12 +191,12 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
- 
+
 builder.Services.AddSingleton<WorkerHost>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<WorkerHost>());
 
 var app = builder.Build();
- 
+
 using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
