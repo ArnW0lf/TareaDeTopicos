@@ -50,7 +50,7 @@ const handleLogin = async () => {
   error.value = null;
   try {
     const response = await apiClient.post('/estudiantes/login', {
-      Registro: registro.value,
+      registro: registro.value,
       password: password.value,
     });
     const token = response.data.token;
