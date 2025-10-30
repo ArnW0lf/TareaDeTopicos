@@ -29,22 +29,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
-            if (!string.IsNullOrEmpty(frontendUrl))
-            {
-                policy.WithOrigins(frontendUrl)
-                      .AllowAnyHeader()
-                      .AllowAnyMethod();
-            }
-        }
+        policy.AllowAnyOrigin()    // Permite CUALQUIER origen (frontend, app, etc.)
+              .AllowAnyHeader()  // Permite CUALQUIER cabecera
+              .AllowAnyMethod(); // Permite CUALQUIER método (GET, POST, etc.)
     });
 });
 

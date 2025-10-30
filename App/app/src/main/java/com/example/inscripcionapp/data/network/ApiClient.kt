@@ -25,7 +25,7 @@ data class MensajeResponse(val mensaje: String)
 // Para encontrarla, en Windows abre cmd y escribe: ipconfig
 // Busca la dirección IPv4 de tu adaptador Wi-Fi o Ethernet.
 // --------------------------------------------------------------------------------
-private const val BASE_URL = "http://192.168.0.6:5001/" // <-- CAMBIA ESTO
+private const val BASE_URL = "https://servicio-a.onrender.com/" // <-- URL actualizada
 
 interface ApiService {
     @POST("api/estudiantes/login")

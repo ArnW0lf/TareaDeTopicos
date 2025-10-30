@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">192.168.0.6</domain> <!-- Asegúrate que esta IP sea la de tu PC -->
-    </domain-config>
+    <!-- La configuración para la IP local se ha eliminado ya que el nuevo backend usa HTTPS. -->
+    <!-- Puedes añadir aquí configuraciones de dominio si las necesitas en el futuro. -->
+    <!-- <domain-config> <domain includeSubdomains="true">example.com</domain> </domain-config> -->
 </network-security-config>
