@@ -36,7 +36,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import apiClient from '../api';
+import apiClient from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 
 const registro = ref('');

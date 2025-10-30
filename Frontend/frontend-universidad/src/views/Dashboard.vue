@@ -167,7 +167,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'vue-toastification';
-import apiClient from '../api';
+import apiClient from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { Modal } from 'bootstrap';
 

@@ -41,7 +41,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import apiClient from '../api';
+import apiClient from '../services/api';
 
 const materias = ref([]);
 const loading = ref(true);
